@@ -21,10 +21,13 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user || !user.password) {
+          console.log("Login failed: User not found in DB -", credentials.username);
           throw new Error("اسم المستخدم أو كلمة المرور غير صحيحة");
         }
 
+        console.log("User found in DB, comparing passwords...");
         const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+        console.log("Password valid:", isPasswordValid);
 
         if (!isPasswordValid) {
           throw new Error("اسم المستخدم أو كلمة المرور غير صحيحة");
