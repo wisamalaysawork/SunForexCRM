@@ -4,9 +4,15 @@ import { NextRequest, NextResponse } from 'next/server'
 // POST /api/reset - Clear all data from the database
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    if (body.confirm !== 'DELETE_ALL_DATA') {
-      return NextResponse.json({ error: 'Confirmation string required' }, { status: 400 })
+    let body;
+    try {
+      body = await request.json()
+    } catch (e) {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
+
+    if (!body || body.confirm !== 'DELETE_ALL_DATA') {
+      return NextResponse.json({ error: 'Confirmation string "DELETE_ALL_DATA" required' }, { status: 400 })
     }
 
     // Delete in correct order using a transaction for atomicity

@@ -41,7 +41,11 @@ export function Sidebar() {
   const handleReset = async () => {
     setResetting(true)
     try {
-      const res = await fetch('/api/reset', { method: 'POST' })
+      const res = await fetch('/api/reset', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: 'DELETE_ALL_DATA' })
+      })
       if (res.ok) {
         toast.success('تم مسح جميع البيانات بنجاح')
         setCurrentPage('dashboard')
