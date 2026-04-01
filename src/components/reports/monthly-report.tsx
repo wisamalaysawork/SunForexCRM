@@ -42,6 +42,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   marketing: 'تسويق',
   software: 'برمجيات',
   other: 'أخرى',
+  funded_cost: 'تكاليف حسابات ممولة',
+  debt_payment: 'سداد ديون',
 }
 
 interface ReportData {
@@ -53,11 +55,17 @@ interface ReportData {
   payments: any[]
   expenses: any[]
   newStudents: any[]
+  newDebts?: any[]
+  debtPayments?: any[]
+  partnerIncomes?: any[]
   totals: {
     enrollmentIncome: number
     fundedIncome: number
     fundedProfit: number
     totalPayments: number
+    totalDebtReceived?: number
+    totalDebtRepayments?: number
+    totalPartnerIncome?: number
     totalExpenses: number
     totalIncome: number
     netProfit: number
@@ -185,6 +193,29 @@ export function MonthlyReport() {
     })
     lines.push(`إجمالي المدفوعات,,,${formatCurrency(data.totals.totalPayments)}`)
     lines.push('')
+
+    // New Debts
+    if (data.newDebts && data.newDebts.length > 0) {
+      lines.push('تمويل / ديون جديدة')
+      lines.push('المصدر,الوصف,التاريخ,المبلغ')
+      data.newDebts.forEach(d => {
+        lines.push(`${d.source},${d.description || ''},${formatDate(d.startDate)},${d.amount}`)
+      })
+      lines.push(`إجمالي التمويل,,,${formatCurrency(data.totals.totalDebtReceived || 0)}`)
+      lines.push('')
+    }
+
+    // Partner Incomes
+    if (data.partnerIncomes && data.partnerIncomes.length > 0) {
+      lines.push('أرباح الشركاء')
+      lines.push('الشريك,الوصف,التاريخ,المبلغ')
+      data.partnerIncomes.forEach(i => {
+        lines.push(`${i.partner?.name || ''},${i.description || ''},${formatDate(i.date)},${i.amount}`)
+      })
+      lines.push(`إجمالي أرباح الشركاء,,,${formatCurrency(data.totals.totalPartnerIncome || 0)}`)
+      lines.push('')
+    }
+
     lines.push(`إجمالي الإيرادات,,,${formatCurrency(data.totals.totalIncome)}`)
     lines.push('')
 
@@ -415,7 +446,39 @@ export function MonthlyReport() {
                   </TableRow>
                 ))}
 
-                {data.enrollments.length === 0 && data.fundedSales.length === 0 && data.payments.length === 0 && (
+                {/* New Debts */}
+                {data.newDebts && data.newDebts.length > 0 && data.newDebts.map(d => (
+                  <TableRow key={`debt-${d.id}`}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <TrendingUp size={14} className="text-orange-500" />
+                        <Badge variant="outline" className="text-xs font-normal">تمويل / دين</Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">{d.description || 'أخذ دين جديد'}</TableCell>
+                    <TableCell className="text-sm">{d.source}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{formatDate(d.startDate)}</TableCell>
+                    <TableCell className="text-left font-medium text-green-600">{formatCurrency(d.amount)}</TableCell>
+                  </TableRow>
+                ))}
+
+                {/* Partner Incomes */}
+                {data.partnerIncomes && data.partnerIncomes.length > 0 && data.partnerIncomes.map(i => (
+                  <TableRow key={`partinc-${i.id}`}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <ArrowUpRight size={14} className="text-blue-500" />
+                        <Badge variant="outline" className="text-xs font-normal">أرباح شركاء</Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">{i.description || 'عمولة شريك'}</TableCell>
+                    <TableCell className="text-sm">{i.partner?.name}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{formatDate(i.date)}</TableCell>
+                    <TableCell className="text-left font-medium text-green-600">{formatCurrency(i.amount)}</TableCell>
+                  </TableRow>
+                ))}
+
+                {data.enrollments.length === 0 && data.fundedSales.length === 0 && data.payments.length === 0 && (!data.newDebts || data.newDebts.length === 0) && (!data.partnerIncomes || data.partnerIncomes.length === 0) && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                       لا يوجد إيرادات في هذا الشهر
@@ -523,6 +586,18 @@ export function MonthlyReport() {
                   <span className="text-muted-foreground">مدفوعات مباشرة</span>
                   <span className="font-medium">{formatCurrency(data.totals.totalPayments)}</span>
                 </div>
+                {(data.totals.totalDebtReceived || 0) > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">تمويل / ديون جديدة</span>
+                    <span className="font-medium">{formatCurrency(data.totals.totalDebtReceived || 0)}</span>
+                  </div>
+                )}
+                {(data.totals.totalPartnerIncome || 0) > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">أرباح شركاء</span>
+                    <span className="font-medium">{formatCurrency(data.totals.totalPartnerIncome || 0)}</span>
+                  </div>
+                )}
               </div>
               <Separator className="bg-green-200 dark:bg-green-800" />
               <div className="flex justify-between font-bold text-green-700 dark:text-green-400">

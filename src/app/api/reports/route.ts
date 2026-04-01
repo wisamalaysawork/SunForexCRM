@@ -70,6 +70,39 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
+    // 6. New debts taken this month
+    const newDebts = await db.debt.findMany({
+      where: {
+        ...baseWhere,
+        startDate: { gte: startDate, lte: endDate },
+      },
+      orderBy: { startDate: 'desc' },
+    })
+
+    // 7. Debt repayments made this month
+    const debtPayments = await db.debtPayment.findMany({
+      where: {
+        ...baseWhere,
+        date: { gte: startDate, lte: endDate },
+      },
+      include: {
+        debt: { select: { id: true, source: true } },
+      },
+      orderBy: { date: 'desc' },
+    })
+
+    // 8. Partner incomes this month
+    const partnerIncomes = await db.partnerIncome.findMany({
+      where: {
+        ...baseWhere,
+        month,
+      },
+      include: {
+        partner: { select: { id: true, name: true } },
+      },
+      orderBy: { date: 'desc' },
+    })
+
     // Calculate totals
     const totalEnrollmentIncome = enrollments
       .filter(e => e.paymentStatus === 'paid' || e.paymentStatus === 'partial')
@@ -86,15 +119,20 @@ export async function GET(request: NextRequest) {
     const totalPayments = payments.reduce((sum, p) => sum + p.amount, 0)
     const manualExpenses = expenses.reduce((sum, e) => sum + e.amount, 0)
 
+    // Debt and Partner Income
+    const totalDebtReceived = newDebts.reduce((sum, d) => sum + d.amount, 0)
+    const totalDebtRepayments = debtPayments.reduce((sum, p) => sum + p.amount, 0)
+    const totalPartnerIncome = partnerIncomes.reduce((sum, i) => sum + i.amount, 0)
+
     // Funded account costs (automatic expenses)
     const fundedCosts = fundedSales
       .filter(s => s.paymentStatus !== 'cancelled')
       .reduce((sum, s) => sum + (s.accountType?.costPrice || 0), 0)
 
-    const totalExpenses = manualExpenses + fundedCosts
+    const totalExpenses = manualExpenses + fundedCosts + totalDebtRepayments
 
-    // Total income = payments + course enrollments + funded sales
-    const totalIncome = totalPayments + totalEnrollmentIncome + totalFundedIncome
+    // Total income = payments + course enrollments + funded sales + new debts + partner income
+    const totalIncome = totalPayments + totalEnrollmentIncome + totalFundedIncome + totalDebtReceived + totalPartnerIncome
 
     const categoryLabels: Record<string, string> = {
       rent: 'إيجارات',
@@ -104,6 +142,7 @@ export async function GET(request: NextRequest) {
       software: 'برمجيات',
       other: 'أخرى',
       funded_cost: 'تكاليف حسابات ممولة',
+      debt_payment: 'سداد ديون',
     }
 
     const expensesByCategory: Record<string, { label: string; items: any[]; total: number }> = {}
@@ -136,6 +175,21 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Add debt repayments as a category
+    if (totalDebtRepayments > 0) {
+      expensesByCategory['debt_payment'] = {
+        label: 'سداد ديون',
+        items: debtPayments.map(p => ({
+          id: `dpay-${p.id}`,
+          category: 'debt_payment',
+          amount: p.amount,
+          description: `سداد دين لـ ${p.debt?.source || 'غير معروف'}`,
+          date: p.date,
+        })),
+        total: totalDebtRepayments,
+      }
+    }
+
     // Net profit
     const netProfit = totalIncome - totalExpenses
 
@@ -148,12 +202,18 @@ export async function GET(request: NextRequest) {
       payments,
       expenses,
       newStudents,
+      newDebts,
+      debtPayments,
+      partnerIncomes,
       totals: {
         enrollmentIncome: totalEnrollmentIncome,
         fundedIncome: totalFundedIncome,
         fundedProfit: totalFundedProfit,
         fundedCosts,
         totalPayments,
+        totalDebtReceived,
+        totalDebtRepayments,
+        totalPartnerIncome,
         manualExpenses,
         totalExpenses,
         totalIncome,
