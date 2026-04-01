@@ -74,6 +74,7 @@ const categoryLabels: Record<string, string> = {
   software: 'برمجيات',
   other: 'أخرى',
   funded_cost: 'تكاليف حسابات ممولة',
+  debt_payment: 'سداد ديون',
 }
 
 const arabicMonths = [

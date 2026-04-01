@@ -208,7 +208,19 @@ export async function GET(request: NextRequest) {
           manual: manualExpenses,
           fundedCosts: fundedCosts,
           debtRepayments: debtRepayments,
-          byCategory: expensesByCategory,
+          byCategory: [
+            ...expensesByCategory,
+            ...(fundedCosts > 0 ? [{ 
+              category: 'funded_cost', 
+              _sum: { amount: fundedCosts },
+              _count: monthFundedSalesData.length 
+            }] : []),
+            ...(debtRepayments > 0 ? [{ 
+              category: 'debt_payment', 
+              _sum: { amount: debtRepayments },
+              _count: 0 
+            }] : [])
+          ],
         },
         profit,
       },
