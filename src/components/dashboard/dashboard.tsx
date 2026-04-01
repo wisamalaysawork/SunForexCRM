@@ -369,24 +369,24 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Courses */}
+        {/* Total Income */}
         <Card
           className="cursor-pointer hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 group rounded-2xl border-border/50 bg-card/60 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 fill-mode-both"
           style={{ animationDelay: '200ms' }}
-          onClick={() => setCurrentPage('courses')}
+          onClick={() => setCurrentPage('accounting')}
         >
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">الدورات</p>
-                <p className="text-3xl font-bold tracking-tight">{data.courses.total}</p>
+                <p className="text-sm text-muted-foreground mb-1">إجمالي الواردات</p>
+                <p className="text-3xl font-bold tracking-tight text-emerald-600">${data.financials.income.total.toFixed(0)}</p>
                 <div className="flex items-center gap-1.5 mt-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                  <p className="text-xs text-muted-foreground font-medium">{data.enrollments?.total || 0} تسجيل</p>
+                  <ArrowUpRight size={12} className="text-emerald-600" />
+                  <p className="text-xs text-muted-foreground font-medium">الواردات الكلية لهذا الشهر</p>
                 </div>
               </div>
-              <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/60 group-hover:bg-purple-100 dark:group-hover:bg-purple-950 transition-colors">
-                <GraduationCap className="text-purple-600" size={24} />
+              <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-950 transition-colors">
+                <DollarSign className="text-emerald-600" size={24} />
               </div>
             </div>
           </CardContent>
@@ -612,7 +612,8 @@ export function Dashboard() {
             <div className="text-xs text-muted-foreground mt-2 space-y-1">
               <p>الدورات: ${data.financials.income.enrollments.toFixed(0)}</p>
               <p>الحسابات الممولة: ${data.financials.income.fundedSales.toFixed(0)}</p>
-              {data.financials.income.partners > 0 && <p>شراكات/عمولات: ${data.financials.income.partners.toFixed(0)}</p>}
+              <p>شراكات/عمولات إضافية: ${data.financials.income.partners.toFixed(0)}</p>
+              {data.financials.income.payments > 0 && <p>مدفوعات متنوعة: ${data.financials.income.payments.toFixed(0)}</p>}
             </div>
           </CardContent>
         </Card>
