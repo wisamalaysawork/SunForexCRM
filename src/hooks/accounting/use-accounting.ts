@@ -5,7 +5,7 @@ export function useAccountingData(month: string) {
   return useQuery({
     queryKey: ['accounting', month],
     queryFn: async () => {
-      const [expRes, payRes, enrollRes, fundedRes, partnerIncomeRes] = await Promise.all([
+      const [expRes, payRes, enrollRes, fundedRes, partnerIncomeRes, debtPayRes] = await Promise.all([
         fetch(`/api/expenses?month=${month}`),
         fetch(`/api/payments?month=${month}`),
         fetch(`/api/enrollments`),
