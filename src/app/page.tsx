@@ -11,6 +11,7 @@ import Accounting from '@/components/accounting/accounting'
 import { MonthlyReport } from '@/components/reports/monthly-report'
 import { UsersManager } from '@/components/users/users-manager'
 import { PartnersManager } from '@/components/partners/partners-manager'
+import DebtsManager from '@/components/debts/debts-manager'
 
 function AppContent() {
   const { currentPage } = useNavigation()
@@ -27,6 +28,7 @@ function AppContent() {
         {currentPage === 'partners' && <PartnersManager />}
         {currentPage === 'accounting' && <Accounting />}
         {currentPage === 'reports' && <MonthlyReport />}
+        {currentPage === 'debts' && <DebtsManager />}
         {currentPage === 'users' && <UsersManager />}
       </main>
     </div>

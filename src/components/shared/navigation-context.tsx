@@ -2,7 +2,7 @@
 
 import { useState, createContext, useContext, ReactNode } from 'react'
 
-type Page = 'dashboard' | 'students' | 'courses' | 'funded' | 'accounting' | 'reports' | 'student-detail' | 'users' | 'partners'
+type Page = 'dashboard' | 'students' | 'courses' | 'funded' | 'accounting' | 'reports' | 'student-detail' | 'users' | 'partners' | 'debts'
 
 interface NavigationContextType {
   currentPage: Page
