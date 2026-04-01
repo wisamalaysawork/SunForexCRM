@@ -20,6 +20,7 @@ export async function GET() {
         canManageCourses: true,
         canManageFunded: true,
         canManageAccounting: true,
+        canManagePartners: true,
         canManageUsers: true,
       },
       orderBy: { createdAt: "desc" }
@@ -59,6 +60,7 @@ export async function POST(req: Request) {
         canManageCourses: permissions.canManageCourses ?? true,
         canManageFunded: permissions.canManageFunded ?? true,
         canManageAccounting: permissions.canManageAccounting ?? true,
+        canManagePartners: permissions.canManagePartners ?? true,
         canManageUsers: permissions.canManageUsers ?? false,
       }
     });

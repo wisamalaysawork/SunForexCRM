@@ -20,6 +20,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       canManageCourses: permissions.canManageCourses,
       canManageFunded: permissions.canManageFunded,
       canManageAccounting: permissions.canManageAccounting,
+      canManagePartners: permissions.canManagePartners,
       canManageUsers: permissions.canManageUsers,
     };
 
