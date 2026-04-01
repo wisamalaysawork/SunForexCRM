@@ -22,13 +22,20 @@ export async function GET() {
         canManageCourses: true,
         canManageFunded: true,
         canManageAccounting: true,
+        canManagePartners: true,
         canManageUsers: true,
       }
     });
 
-    return NextResponse.json({ message: "Admin user created successfully", username: newAdmin.username });
-  } catch (error) {
+    return NextResponse.json({ 
+      message: "Admin user created successfully", 
+      username: newAdmin.username 
+    });
+  } catch (error: any) {
     console.error("Error creating admin user:", error);
-    return NextResponse.json({ error: "Failed to create admin user" }, { status: 500 });
+    return NextResponse.json({ 
+      error: "Failed to create admin user", 
+      details: error.message || String(error) 
+    }, { status: 500 });
   }
 }
