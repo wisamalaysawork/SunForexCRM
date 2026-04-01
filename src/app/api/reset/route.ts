@@ -9,20 +9,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Confirmation string required' }, { status: 400 })
     }
 
-    // Delete in correct order (children first due to foreign keys)
-    await db.payment.deleteMany({})
-    await db.courseEnrollment.deleteMany({})
-    await db.fundedAccountSale.deleteMany({})
-    await db.partnerIncome.deleteMany({})
-    await db.partner.deleteMany({})
-    await db.expense.deleteMany({})
-    await db.student.deleteMany({})
-    await db.course.deleteMany({})
-    await db.fundedAccountType.deleteMany({})
+    // Delete in correct order using a transaction for atomicity
+    await db.$transaction([
+      db.payment.deleteMany({}),
+      db.courseEnrollment.deleteMany({}),
+      db.fundedAccountSale.deleteMany({}),
+      db.partnerIncome.deleteMany({}),
+      db.partner.deleteMany({}),
+      db.expense.deleteMany({}),
+      db.student.deleteMany({}),
+      db.course.deleteMany({}),
+      db.fundedAccountType.deleteMany({}),
+    ])
 
     return NextResponse.json({ success: true, message: 'تم مسح جميع البيانات بنجاح' })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Reset error:', error)
-    return NextResponse.json({ error: 'فشل في مسح البيانات' }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'فشل في مسح البيانات',
+      details: error.message || String(error)
+    }, { status: 500 })
   }
 }
