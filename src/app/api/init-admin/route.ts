@@ -11,7 +11,18 @@ export async function GET() {
     });
 
     if (existingAdmin) {
-      return NextResponse.json({ message: "Admin user already exists" });
+      await db.user.update({
+        where: { id: existingAdmin.id },
+        data: {
+          canManageStudents: true,
+          canManageCourses: true,
+          canManageFunded: true,
+          canManageAccounting: true,
+          canManagePartners: true,
+          canManageUsers: true,
+        }
+      });
+      return NextResponse.json({ message: "Admin user permissions updated" });
     }
 
     const hashedPassword = await bcrypt.hash("admin123", 10);
