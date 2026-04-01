@@ -161,3 +161,32 @@ model PartnerIncome {
 
   partner     Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
 }
+
+// ============ Debts & Repayments ============
+model Debt {
+  id          String   @id @default(cuid())
+  amount      Float    // إجمالي الدين
+  source      String   // جهة الدين (اسم الشخص أو البنك)
+  description String?  // التفاصيل
+  status      String   @default("active") // active, paid
+  startDate   DateTime @default(now())   // تاريخ أخذ الدين
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  payments    DebtPayment[]
+}
+
+model DebtPayment {
+  id          String   @id @default(cuid())
+  debtId      String
+  amount      Float    // مبلغ السداد
+  date        DateTime @default(now())   // تاريخ السداد
+  notes       String?  // ملاحظات
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  debt        Debt     @relation(fields: [debtId], references: [id], onDelete: Cascade)
+}
+
