@@ -8,6 +8,15 @@ export async function GET(request: NextRequest) {
     const month = searchParams.get('month') // format: "2026-03"
 
     const baseWhere = { deletedAt: null }
+    
+    // Calculate date range if month is provided
+    let startDate: Date | null = null
+    let endDate: Date | null = null
+    if (month) {
+      const [year, m] = month.split('-').map(Number)
+      startDate = new Date(year, m - 1, 1)
+      endDate = new Date(year, m, 1) // First day of next month
+    }
 
     // ============ Students Metrics ============
     const totalStudents = await db.student.count({ where: baseWhere })
@@ -51,7 +60,12 @@ export async function GET(request: NextRequest) {
       where: {
         ...baseWhere,
         paymentStatus: 'paid',
-        ...(month && { createdAt: { gte: new Date(`${month}-01`) } }),
+        ...(month && { 
+          createdAt: { 
+            gte: startDate!, 
+            lt: endDate! 
+          } 
+        }),
       },
       _sum: { amountPaid: true },
     })
@@ -60,7 +74,12 @@ export async function GET(request: NextRequest) {
       where: {
         ...baseWhere,
         paymentStatus: 'paid',
-        ...(month && { createdAt: { gte: new Date(`${month}-01`) } }),
+        ...(month && { 
+          createdAt: { 
+            gte: startDate!, 
+            lt: endDate! 
+          } 
+        }),
       },
       _sum: { amountPaid: true },
     })

@@ -13,6 +13,8 @@ export async function POST(request: NextRequest) {
     await db.payment.deleteMany({})
     await db.courseEnrollment.deleteMany({})
     await db.fundedAccountSale.deleteMany({})
+    await db.partnerIncome.deleteMany({})
+    await db.partner.deleteMany({})
     await db.expense.deleteMany({})
     await db.student.deleteMany({})
     await db.course.deleteMany({})
