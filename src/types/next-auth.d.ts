@@ -11,6 +11,7 @@ declare module "next-auth" {
         canManageFunded: boolean;
         canManageAccounting: boolean;
         canManagePartners: boolean;
+        canManageDebts: boolean;
         canManageUsers: boolean; // super admin role
       };
     } & DefaultSession["user"]
@@ -24,6 +25,7 @@ declare module "next-auth" {
     canManageFunded: boolean;
     canManageAccounting: boolean;
     canManagePartners: boolean;
+    canManageDebts: boolean;
     canManageUsers: boolean;
   }
 }
@@ -38,6 +40,7 @@ declare module "next-auth/jwt" {
       canManageFunded: boolean;
       canManageAccounting: boolean;
       canManagePartners: boolean;
+      canManageDebts: boolean;
       canManageUsers: boolean;
     };
   }

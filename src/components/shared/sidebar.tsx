@@ -35,7 +35,7 @@ export function Sidebar() {
     { id: 'partners' as const, label: 'الشركاء', icon: Handshake, show: permissions?.canManagePartners !== false },
     { id: 'accounting' as const, label: 'المحاسبة', icon: Calculator, show: permissions?.canManageAccounting !== false },
     { id: 'reports' as const, label: 'التقارير الشهرية', icon: FileText, show: permissions?.canManageAccounting !== false },
-    { id: 'debts' as const, label: 'الديون', icon: Handshake, show: permissions?.canManageAccounting !== false },
+    { id: 'debts' as const, label: 'الديون', icon: Wallet, show: permissions?.canManageDebts !== false },
     { id: 'users' as const, label: 'المديرين', icon: ShieldAlert, show: permissions?.canManageUsers === true },
   ].filter(item => item.show)
 

@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Handshake, Plus, Trash2 } from "lucide-react"
+import { Handshake, Plus, Trash2, Calendar, DollarSign } from "lucide-react"
 import { toast } from "sonner"
 
 export function PartnersManager() {
@@ -24,6 +25,9 @@ export function PartnersManager() {
   const [partnerForm, setPartnerForm] = useState({ name: "", description: "" })
 
   const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<{type: 'partner' | 'income', id: string, name?: string} | null>(null)
+
   const [incomeForm, setIncomeForm] = useState({
     partnerId: "",
     amount: "",
@@ -71,15 +75,39 @@ export function PartnersManager() {
     }
   }
 
-  const handleDeletePartner = async (id: string) => {
-    if (!confirm("حذف الشريك سيحذف جميع إيراداته. هل أنت متأكد؟")) return
+  const handleDeletePartner = async (id: string, name: string) => {
+    setDeleteTarget({ type: 'partner', id, name })
+    setDeleteConfirmOpen(true)
+  }
+
+  const handleDeleteIncome = async (id: string) => {
+    setDeleteTarget({ type: 'income', id })
+    setDeleteConfirmOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
     try {
-      const res = await fetch(`/api/partners/${id}`, { method: "DELETE" })
-      if (res.ok) {
-        toast.success("تم الحذف")
-        fetchData()
+      if (deleteTarget.type === 'partner') {
+        const res = await fetch(`/api/partners/${deleteTarget.id}`, { method: "DELETE" })
+        if (res.ok) {
+          setPartners(partners.filter(p => p.id !== deleteTarget.id))
+          toast.success("تم حذف الشريك")
+          fetchData()
+        }
+      } else {
+        const res = await fetch(`/api/partner-incomes/${deleteTarget.id}`, { method: "DELETE" })
+        if (res.ok) {
+          setIncomes(incomes.filter(i => i.id !== deleteTarget.id))
+          toast.success("تم حذف العمولة")
+          fetchData()
+        }
       }
-    } catch (err) { /* error is handled */ }
+      setDeleteConfirmOpen(false)
+      setDeleteTarget(null)
+    } catch (e) {
+      toast.error("فشل الحذف")
+    }
   }
 
   const handleAddIncome = async () => {
@@ -100,17 +128,6 @@ export function PartnersManager() {
     }
   }
 
-  const handleDeleteIncome = async (id: string) => {
-    if (!confirm("هل أنت متأكد من حذف هذه العمولة؟")) return
-    try {
-      const res = await fetch(`/api/partner-incomes/${id}`, { method: "DELETE" })
-      if (res.ok) {
-        toast.success("تم حذف العمولة")
-        fetchData()
-      }
-    } catch (err) { /* error is handled */ }
-  }
-
   if (!canManagePartners) {
     return <div className="p-8 text-center text-red-500 font-bold">غير مصرح لك</div>
   }
@@ -127,7 +144,6 @@ export function PartnersManager() {
         </div>
         
         <div className="flex gap-2">
-          {/* Add Partner Dialog */}
           <Dialog open={isPartnerDialogOpen} onOpenChange={setIsPartnerDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2">
@@ -135,15 +151,30 @@ export function PartnersManager() {
               </Button>
             </DialogTrigger>
             <DialogContent dir="rtl">
-              <DialogHeader><DialogTitle>إضافة شريك جديد</DialogTitle></DialogHeader>
+              <DialogHeader>
+                <DialogTitle>إضافة شريك جديد</DialogTitle>
+                <DialogDescription>
+                  أدخل بيانات الشركة الشريكة أو مزود الخدمة لتتبع العمولات الصادرة والواردة.
+                </DialogDescription>
+              </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label>اسم الشريك (FundedNext, الخ)</Label>
-                  <Input value={partnerForm.name} onChange={e => setPartnerForm({...partnerForm, name: e.target.value})} />
+                  <Label htmlFor="partner-name">اسم الشريك (FundedNext, الخ)</Label>
+                  <Input 
+                    id="partner-name"
+                    name="name"
+                    value={partnerForm.name} 
+                    onChange={e => setPartnerForm({...partnerForm, name: e.target.value})} 
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label>وصف أو ملاحظات</Label>
-                  <Input value={partnerForm.description} onChange={e => setPartnerForm({...partnerForm, description: e.target.value})} />
+                  <Label htmlFor="partner-description">وصف أو ملاحظات</Label>
+                  <Input 
+                    id="partner-description"
+                    name="description"
+                    value={partnerForm.description} 
+                    onChange={e => setPartnerForm({...partnerForm, description: e.target.value})} 
+                  />
                 </div>
               </div>
               <div className="flex justify-end gap-2">
@@ -153,7 +184,6 @@ export function PartnersManager() {
             </DialogContent>
           </Dialog>
 
-          {/* Add Income Dialog */}
           <Dialog open={isIncomeDialogOpen} onOpenChange={setIsIncomeDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2 shadow-lg shadow-primary/20 hover:-translate-y-0.5 transition-transform">
@@ -161,34 +191,64 @@ export function PartnersManager() {
               </Button>
             </DialogTrigger>
             <DialogContent dir="rtl">
-              <DialogHeader><DialogTitle>تسجيل عمولة أو ربح جديد</DialogTitle></DialogHeader>
+              <DialogHeader>
+                <DialogTitle>تسجيل عمولة أو ربح جديد</DialogTitle>
+                <DialogDescription>
+                  سجل العمولات الواردة من الشركاء أو الأرباح الإضافية من شركات التمويل.
+                </DialogDescription>
+              </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label>تحديد الشريك</Label>
+                  <Label htmlFor="income-partner-select">تحديد الشريك</Label>
                   <Select value={incomeForm.partnerId} onValueChange={v => setIncomeForm({...incomeForm, partnerId: v})}>
-                    <SelectTrigger><SelectValue placeholder="اختر الشريك" /></SelectTrigger>
+                    <SelectTrigger id="income-partner-select"><SelectValue placeholder="اختر الشريك" /></SelectTrigger>
                     <SelectContent dir="rtl">
                       {partners.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>المبلغ ($)</Label>
-                  <Input type="number" dir="ltr" className="text-right" value={incomeForm.amount} onChange={e => setIncomeForm({...incomeForm, amount: e.target.value})} />
+                  <Label htmlFor="income-amount">المبلغ ($)</Label>
+                  <Input 
+                    id="income-amount"
+                    name="amount"
+                    type="number" 
+                    dir="ltr" 
+                    className="text-right" 
+                    value={incomeForm.amount} 
+                    onChange={e => setIncomeForm({...incomeForm, amount: e.target.value})} 
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>تاريخ الدفع</Label>
-                    <Input type="date" value={incomeForm.date} onChange={e => setIncomeForm({...incomeForm, date: e.target.value})} />
+                    <Label htmlFor="income-date">تاريخ الدفع</Label>
+                    <Input 
+                      id="income-date"
+                      name="date"
+                      type="date" 
+                      value={incomeForm.date} 
+                      onChange={e => setIncomeForm({...incomeForm, date: e.target.value})} 
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label>شهر الاستحقاق</Label>
-                    <Input type="month" value={incomeForm.month} onChange={e => setIncomeForm({...incomeForm, month: e.target.value})} />
+                    <Label htmlFor="income-month">شهر الاستحقاق</Label>
+                    <Input 
+                      id="income-month"
+                      name="month"
+                      type="month" 
+                      value={incomeForm.month} 
+                      onChange={e => setIncomeForm({...incomeForm, month: e.target.value})} 
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>ملاحظات (اختياري)</Label>
-                  <Input value={incomeForm.description} onChange={e => setIncomeForm({...incomeForm, description: e.target.value})} />
+                  <Label htmlFor="income-description">ملاحظات (اختياري)</Label>
+                  <Input 
+                    id="income-description"
+                    name="description"
+                    value={incomeForm.description} 
+                    onChange={e => setIncomeForm({...incomeForm, description: e.target.value})} 
+                  />
                 </div>
               </div>
               <div className="flex justify-end gap-2">
@@ -201,7 +261,6 @@ export function PartnersManager() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Incomes Table */}
         <Card className="lg:col-span-2 border-border/50 shadow-xl bg-card/60 backdrop-blur-xl rounded-2xl overflow-hidden">
           <CardHeader>
             <CardTitle>سجل العمولات الأخير</CardTitle>
@@ -240,7 +299,6 @@ export function PartnersManager() {
           </CardContent>
         </Card>
 
-        {/* Partners List */}
         <Card className="border-border/50 shadow-xl bg-card/60 backdrop-blur-xl rounded-2xl">
           <CardHeader>
             <CardTitle>الشركاء المقيدين</CardTitle>
@@ -252,7 +310,7 @@ export function PartnersManager() {
                   <h4 className="font-bold">{p.name}</h4>
                   <p className="text-xs text-muted-foreground">{p.description}</p>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => handleDeletePartner(p.id)} className="text-red-500">
+                <Button variant="ghost" size="icon" onClick={() => handleDeletePartner(p.id, p.name)} className="text-red-500">
                   <Trash2 size={16} />
                 </Button>
               </div>
@@ -261,6 +319,23 @@ export function PartnersManager() {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget?.type === 'partner' 
+                ? `هل أنت متأكد من حذف الشريك "${deleteTarget.name}"؟ سيؤدي هذا إلى حذف جميع العمولات المسجلة له بشكل نهائي.`
+                : "هل أنت متأكد من حذف هذه العمولة؟ سيتم حذف بياناتها بشكل نهائي."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel onClick={() => setDeleteTarget(null)}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">حذف</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

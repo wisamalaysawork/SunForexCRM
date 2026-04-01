@@ -21,6 +21,7 @@ export async function GET() {
         canManageFunded: true,
         canManageAccounting: true,
         canManagePartners: true,
+        canManageDebts: true,
         canManageUsers: true,
       },
       orderBy: { createdAt: "desc" }
@@ -61,6 +62,7 @@ export async function POST(req: Request) {
         canManageFunded: permissions.canManageFunded ?? true,
         canManageAccounting: permissions.canManageAccounting ?? true,
         canManagePartners: permissions.canManagePartners ?? true,
+        canManageDebts: permissions.canManageDebts ?? true,
         canManageUsers: permissions.canManageUsers ?? false,
       }
     });

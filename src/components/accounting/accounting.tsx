@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -346,17 +346,26 @@ export default function AccountingComponent() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>{editExpense ? 'تعديل المصروف' : 'إضافة مصروف جديد'}</DialogTitle>
+                <DialogDescription>
+                  {editExpense ? 'قم بتعديل بيانات المصروف الحالي هنا.' : 'أدخل بيانات المصروف الجديد لتسجيله في النظام.'}
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label>تاريخ المصروف</Label>
-                  <Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
+                  <Label htmlFor="expense-date">تاريخ المصروف</Label>
+                  <Input 
+                    id="expense-date"
+                    name="date"
+                    type="date" 
+                    value={form.date} 
+                    onChange={e => setForm({ ...form, date: e.target.value })} 
+                  />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>التصنيف</Label>
+                  <Label htmlFor="expense-category">التصنيف</Label>
                   <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
-                    <SelectTrigger><SelectValue placeholder="اختر التصنيف..." /></SelectTrigger>
+                    <SelectTrigger id="expense-category"><SelectValue placeholder="اختر التصنيف..." /></SelectTrigger>
                     <SelectContent>
                       {CATEGORIES.map(c => (
                         <SelectItem key={c.value} value={c.value}>
@@ -368,13 +377,28 @@ export default function AccountingComponent() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>المبلغ ($)</Label>
-                  <Input type="number" min="0" step="0.01" placeholder="0.00" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
+                  <Label htmlFor="expense-amount">المبلغ ($)</Label>
+                  <Input 
+                    id="expense-amount"
+                    name="amount"
+                    type="number" 
+                    min="0" 
+                    step="0.01" 
+                    placeholder="0.00" 
+                    value={form.amount} 
+                    onChange={e => setForm({ ...form, amount: e.target.value })} 
+                  />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>البيان / ملاحظات (اختياري)</Label>
-                  <Textarea placeholder="تفاصيل المصروف..." value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+                  <Label htmlFor="expense-description">البيان / ملاحظات (اختياري)</Label>
+                  <Textarea 
+                    id="expense-description"
+                    name="description"
+                    placeholder="تفاصيل المصروف..." 
+                    value={form.description} 
+                    onChange={e => setForm({ ...form, description: e.target.value })} 
+                  />
                 </div>
                 
                 <Button className="w-full" onClick={handleSave} disabled={createExpense.isPending || updateExpense.isPending}>

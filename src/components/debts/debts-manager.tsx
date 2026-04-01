@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
@@ -19,7 +20,9 @@ export default function DebtsManager() {
   const { debts, isLoading, createDebt, updateDebt, deleteDebt, addPayment } = useDebts()
   const [debtDialogOpen, setDebtDialogOpen] = useState(false)
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedDebt, setSelectedDebt] = useState<any>(null)
+  const [debtToDelete, setDebtToDelete] = useState<string | null>(null)
   const { toast } = useToast()
 
   const [debtForm, setDebtForm] = useState({
@@ -89,10 +92,12 @@ export default function DebtsManager() {
     }
   }
 
-  const handleDeleteDebt = async (id: string) => {
-    if (!confirm("هل أنت متأكد من حذف هذا الدين؟ لا يمكن التراجع عن هذا الإجراء.")) return
+  const handleDeleteDebt = async () => {
+    if (!debtToDelete) return
     try {
-      await deleteDebt(id)
+      await deleteDebt(debtToDelete)
+      setDeleteDialogOpen(false)
+      setDebtToDelete(null)
       toast({ title: "تم حذف الدين بنجاح" })
     } catch (e) {
       toast({ title: "خطأ في حذف الدين", variant: "destructive" })
@@ -129,8 +134,10 @@ export default function DebtsManager() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>جهة الدين (المقرض)</Label>
+                <Label htmlFor="debt-source">جهة الدين (المقرض)</Label>
                 <Input 
+                  id="debt-source"
+                  name="source"
                   placeholder="مثال: البنك العربي، فلان الفلاني..." 
                   value={debtForm.source}
                   onChange={e => setDebtForm({ ...debtForm, source: e.target.value })}
@@ -138,8 +145,10 @@ export default function DebtsManager() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>المبلغ الكلي ($)</Label>
+                  <Label htmlFor="debt-amount">المبلغ الكلي ($)</Label>
                   <Input 
+                    id="debt-amount"
+                    name="amount"
                     type="number" 
                     placeholder="0.00" 
                     value={debtForm.amount}
@@ -147,8 +156,10 @@ export default function DebtsManager() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>تاريخ أخذ الدين</Label>
+                  <Label htmlFor="debt-start-date">تاريخ أخذ الدين</Label>
                   <Input 
+                    id="debt-start-date"
+                    name="startDate"
                     type="date" 
                     value={debtForm.startDate}
                     onChange={e => setDebtForm({ ...debtForm, startDate: e.target.value })}
@@ -158,9 +169,9 @@ export default function DebtsManager() {
 
               {selectedDebt && (
                 <div className="space-y-2">
-                  <Label>حالة الدين</Label>
+                  <Label htmlFor="debt-status">حالة الدين</Label>
                   <Select value={debtForm.status} onValueChange={v => setDebtForm({ ...debtForm, status: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="debt-status"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="active">قيد السداد (نشط)</SelectItem>
                       <SelectItem value="paid">تم التسديد بالكامل</SelectItem>
@@ -169,8 +180,10 @@ export default function DebtsManager() {
                 </div>
               )}
               <div className="space-y-2">
-                <Label>ملاحظات إضافية</Label>
+                <Label htmlFor="debt-description">ملاحظات إضافية</Label>
                 <Textarea 
+                  id="debt-description"
+                  name="description"
                   placeholder="تفاصيل عن القرض أو شروط السداد..." 
                   value={debtForm.description}
                   onChange={e => setDebtForm({ ...debtForm, description: e.target.value })}
@@ -269,7 +282,7 @@ export default function DebtsManager() {
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50" onClick={() => openEditDebt(debt)}>
                         <Edit size={16} />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteDebt(debt.id)}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => { setDebtToDelete(debt.id); setDeleteDialogOpen(true); }}>
                         <Trash2 size={16} />
                       </Button>
                     </div>
@@ -341,8 +354,10 @@ export default function DebtsManager() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>المبلغ المسدد ($)</Label>
+              <Label htmlFor="debt-payment-amount">المبلغ المسدد ($)</Label>
               <Input 
+                id="debt-payment-amount"
+                name="amount"
                 type="number" 
                 placeholder="0.00" 
                 value={paymentForm.amount}
@@ -350,16 +365,20 @@ export default function DebtsManager() {
               />
             </div>
             <div className="space-y-2">
-              <Label>تاريخ الدفع</Label>
+              <Label htmlFor="debt-payment-date">تاريخ الدفع</Label>
               <Input 
+                id="debt-payment-date"
+                name="date"
                 type="date" 
                 value={paymentForm.date}
                 onChange={e => setPaymentForm({ ...paymentForm, date: e.target.value })}
               />
             </div>
             <div className="space-y-2">
-              <Label>ملاحظات (اختياري)</Label>
+              <Label htmlFor="debt-payment-notes">ملاحظات (اختياري)</Label>
               <Input 
+                id="debt-payment-notes"
+                name="notes"
                 placeholder="رقم الحوالة، اسم طريقة الدفع..." 
                 value={paymentForm.notes}
                 onChange={e => setPaymentForm({ ...paymentForm, notes: e.target.value })}
@@ -371,6 +390,24 @@ export default function DebtsManager() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد حذف الدين</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل أنت متأكد من حذف هذا الدين؟ سيتم حذف جميع بيانات الدين وسجل الدفعات المرتبطة به نهائياً. هذا الإجراء لا يمكن التراجع عنه.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel onClick={() => setDebtToDelete(null)}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteDebt} className="bg-red-600 hover:bg-red-700">
+              حذف نهائي
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -24,7 +24,7 @@ import { useNavigation } from '@/components/shared/navigation-context'
 import {
   ArrowRight, Plus, Phone, Mail, GraduationCap, Wallet, DollarSign,
   Calendar, Pencil, Trash2, Save, StickyNote, X, CheckCircle2, Clock,
-  Ban, MinusCircle, Edit, Eye, BookOpen, AlertTriangle,
+  Ban, MinusCircle, Edit, Eye, BookOpen, AlertTriangle, MapPin
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useStudentDetails, useStudentEntityMutations, useStudentEnrollments, useStudentFundedSales, useStudentPayments, useCourses, useAccountTypes } from '@/hooks/students/use-student'
@@ -143,7 +143,7 @@ export function StudentDetail() {
   const [enrollForm, setEnrollForm] = useState({ courseId: '', amountPaid: 0, paymentStatus: 'pending', notes: '' })
   const [fundedForm, setFundedForm] = useState({ accountTypeId: '', amountPaid: 0, paymentStatus: 'pending', notes: '' })
   const [paymentForm, setPaymentForm] = useState({ amount: 0, method: 'cash', description: '', date: '' })
-  const [editForm, setEditForm] = useState({ name: '', phone: '', email: '' })
+  const [editForm, setEditForm] = useState({ name: '', phone: '', email: '', address: '' })
 
   // Notes editing
   const [isEditingNotes, setIsEditingNotes] = useState(false)
@@ -422,6 +422,12 @@ export function StudentDetail() {
                   <Calendar size={13} className="shrink-0" />
                   انضم في {new Date(student.createdAt).toLocaleDateString('ar')}
                 </span>
+                {student.address && (
+                  <span className="flex items-center gap-1.5">
+                    <MapPin size={13} className="shrink-0" />
+                    <span>{student.address}</span>
+                  </span>
+                )}
               </div>
               {/* Total amount paid prominently */}
               <div className="flex items-center gap-2">
@@ -437,7 +443,12 @@ export function StudentDetail() {
             <div className="flex items-center gap-2 shrink-0">
               <Dialog open={editDialogOpen} onOpenChange={(open) => {
                 setEditDialogOpen(open)
-                if (open) setEditForm({ name: student.name, phone: student.phone || '', email: student.email || '' })
+                if (open) setEditForm({ 
+                  name: student.name, 
+                  phone: student.phone || '', 
+                  email: student.email || '',
+                  address: student.address || ''
+                })
               }}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-1.5">
@@ -446,30 +457,51 @@ export function StudentDetail() {
                   </Button>
                 </DialogTrigger>
                 <DialogContent dir="rtl">
-                  <DialogHeader><DialogTitle>تعديل بيانات الطالب</DialogTitle></DialogHeader>
+                  <DialogHeader>
+                    <DialogTitle>تعديل بيانات الطالب</DialogTitle>
+                    <DialogDescription>
+                      قم بتعديل المعلومات الشخصية للطالب هنا.
+                    </DialogDescription>
+                  </DialogHeader>
                   <div className="space-y-4">
-                    <div>
-                      <Label>الاسم *</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-student-name">الاسم *</Label>
                       <Input
+                        id="edit-student-name"
+                        name="name"
                         value={editForm.name}
                         onChange={e => setEditForm({ ...editForm, name: e.target.value })}
                       />
                     </div>
-                    <div>
-                      <Label>الهاتف</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-student-phone">الهاتف</Label>
                       <Input
+                        id="edit-student-phone"
+                        name="phone"
                         value={editForm.phone}
                         onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
                         dir="ltr"
                       />
                     </div>
-                    <div>
-                      <Label>البريد الإلكتروني</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-student-email">البريد الإلكتروني</Label>
                       <Input
+                        id="edit-student-email"
+                        name="email"
                         value={editForm.email}
                         onChange={e => setEditForm({ ...editForm, email: e.target.value })}
                         dir="ltr"
                         type="email"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-student-address">العنوان</Label>
+                      <Input
+                        id="edit-student-address"
+                        name="address"
+                        value={editForm.address}
+                        onChange={e => setEditForm({ ...editForm, address: e.target.value })}
+                        placeholder="مثلاً: رام الله، شارع الإرسال"
                       />
                     </div>
                     <Button onClick={handleEditStudent} className="w-full gap-2">
@@ -589,16 +621,21 @@ export function StudentDetail() {
                   </Button>
                 </DialogTrigger>
                 <DialogContent dir="rtl">
-                  <DialogHeader><DialogTitle>شراء حساب ممول</DialogTitle></DialogHeader>
+                  <DialogHeader>
+                    <DialogTitle>شراء حساب ممول</DialogTitle>
+                    <DialogDescription>
+                      اختر نوع الحساب والقيمة المدفوعة من قِبَل الطالب.
+                    </DialogDescription>
+                  </DialogHeader>
                   <div className="space-y-4">
-                    <div>
-                      <Label>نوع الحساب *</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="funded-account-type">نوع الحساب *</Label>
                       <Select value={fundedForm.accountTypeId} onValueChange={v => {
                         setFundedForm({ ...fundedForm, accountTypeId: v })
                         const at = accountTypes.find(a => a.id === v)
                         if (at) setFundedForm(prev => ({ ...prev, amountPaid: at.sellingPrice }))
                       }}>
-                        <SelectTrigger><SelectValue placeholder="اختر نوع الحساب" /></SelectTrigger>
+                        <SelectTrigger id="funded-account-type"><SelectValue placeholder="اختر نوع الحساب" /></SelectTrigger>
                         <SelectContent>
                           {accountTypes.filter(a => a.isActive).map(a => (
                             <SelectItem key={a.id} value={a.id}>
@@ -633,19 +670,21 @@ export function StudentDetail() {
                       )
                     })()}
                     <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <Label>المبلغ المدفوع</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="funded-amount-paid">المبلغ المدفوع</Label>
                         <Input
+                          id="funded-amount-paid"
+                          name="amountPaid"
                           type="number"
                           value={fundedForm.amountPaid || ''}
                           onChange={e => setFundedForm({ ...fundedForm, amountPaid: Number(e.target.value) })}
                           dir="ltr"
                         />
                       </div>
-                      <div>
-                        <Label>حالة الدفع</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="funded-payment-status">حالة الدفع</Label>
                         <Select value={fundedForm.paymentStatus} onValueChange={v => setFundedForm({ ...fundedForm, paymentStatus: v })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectTrigger id="funded-payment-status"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="paid">مدفوع</SelectItem>
                             <SelectItem value="partial">جزئي</SelectItem>
@@ -654,9 +693,14 @@ export function StudentDetail() {
                         </Select>
                       </div>
                     </div>
-                    <div>
-                      <Label>ملاحظات</Label>
-                      <Textarea value={fundedForm.notes} onChange={e => setFundedForm({ ...fundedForm, notes: e.target.value })} />
+                    <div className="space-y-2">
+                      <Label htmlFor="funded-notes">ملاحظات</Label>
+                      <Textarea 
+                        id="funded-notes"
+                        name="notes"
+                        value={fundedForm.notes} 
+                        onChange={e => setFundedForm({ ...fundedForm, notes: e.target.value })} 
+                      />
                     </div>
                     <Button onClick={handleFundedSale} className="w-full">شراء</Button>
                   </div>
@@ -671,16 +715,21 @@ export function StudentDetail() {
                   </Button>
                 </DialogTrigger>
                 <DialogContent dir="rtl">
-                  <DialogHeader><DialogTitle>تسجيل في دورة جديدة</DialogTitle></DialogHeader>
+                  <DialogHeader>
+                    <DialogTitle>تسجيل في دورة جديدة</DialogTitle>
+                    <DialogDescription>
+                      اختر الدورة التدريبية والمبلغ المدفوع مبدئياً.
+                    </DialogDescription>
+                  </DialogHeader>
                   <div className="space-y-4">
-                    <div>
-                      <Label>الدورة *</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="enroll-course-id">الدورة *</Label>
                       <Select value={enrollForm.courseId} onValueChange={v => {
                         setEnrollForm({ ...enrollForm, courseId: v })
                         const course = courses.find(c => c.id === v)
                         if (course) setEnrollForm(prev => ({ ...prev, amountPaid: course.price }))
                       }}>
-                        <SelectTrigger><SelectValue placeholder="اختر دورة" /></SelectTrigger>
+                        <SelectTrigger id="enroll-course-id"><SelectValue placeholder="اختر دورة" /></SelectTrigger>
                         <SelectContent>
                           {courses.filter(c => c.isActive).map(c => (
                             <SelectItem key={c.id} value={c.id}>{c.name} - ${c.price}</SelectItem>
@@ -689,19 +738,21 @@ export function StudentDetail() {
                       </Select>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <Label>المبلغ المدفوع</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="enroll-amount-paid">المبلغ المدفوع</Label>
                         <Input
+                          id="enroll-amount-paid"
+                          name="amountPaid"
                           type="number"
                           value={enrollForm.amountPaid || ''}
                           onChange={e => setEnrollForm({ ...enrollForm, amountPaid: Number(e.target.value) })}
                           dir="ltr"
                         />
                       </div>
-                      <div>
-                        <Label>حالة الدفع</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="enroll-payment-status">حالة الدفع</Label>
                         <Select value={enrollForm.paymentStatus} onValueChange={v => setEnrollForm({ ...enrollForm, paymentStatus: v })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectTrigger id="enroll-payment-status"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="paid">مدفوع</SelectItem>
                             <SelectItem value="partial">جزئي</SelectItem>
@@ -710,9 +761,14 @@ export function StudentDetail() {
                         </Select>
                       </div>
                     </div>
-                    <div>
-                      <Label>ملاحظات</Label>
-                      <Textarea value={enrollForm.notes} onChange={e => setEnrollForm({ ...enrollForm, notes: e.target.value })} />
+                    <div className="space-y-2">
+                      <Label htmlFor="enroll-notes">ملاحظات</Label>
+                      <Textarea 
+                        id="enroll-notes"
+                        name="notes"
+                        value={enrollForm.notes} 
+                        onChange={e => setEnrollForm({ ...enrollForm, notes: e.target.value })} 
+                      />
                     </div>
                     <Button onClick={handleEnroll} className="w-full">تسجيل</Button>
                   </div>
@@ -836,16 +892,21 @@ export function StudentDetail() {
                 <Button className="gap-2"><Plus size={16} /> تسجيل في دورة جديدة</Button>
               </DialogTrigger>
               <DialogContent dir="rtl">
-                <DialogHeader><DialogTitle>تسجيل الطالب في دورة</DialogTitle></DialogHeader>
+                <DialogHeader>
+                  <DialogTitle>تسجيل الطالب في دورة</DialogTitle>
+                  <DialogDescription>
+                    اختر الدورة التدريبية والمبلغ المدفوع مبدئياً.
+                  </DialogDescription>
+                </DialogHeader>
                 <div className="space-y-4">
-                  <div>
-                    <Label>الدورة *</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="enroll-course-id-tab">الدورة *</Label>
                     <Select value={enrollForm.courseId} onValueChange={v => {
                       setEnrollForm({ ...enrollForm, courseId: v })
                       const course = courses.find(c => c.id === v)
                       if (course) setEnrollForm(prev => ({ ...prev, amountPaid: course.price }))
                     }}>
-                      <SelectTrigger><SelectValue placeholder="اختر دورة" /></SelectTrigger>
+                      <SelectTrigger id="enroll-course-id-tab"><SelectValue placeholder="اختر دورة" /></SelectTrigger>
                       <SelectContent>
                         {courses.filter(c => c.isActive).map(c => (
                           <SelectItem key={c.id} value={c.id}>{c.name} - ${c.price}</SelectItem>
@@ -854,19 +915,21 @@ export function StudentDetail() {
                     </Select>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>المبلغ المدفوع</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="enroll-amount-paid-tab">المبلغ المدفوع</Label>
                       <Input
+                        id="enroll-amount-paid-tab"
+                        name="amountPaid"
                         type="number"
                         value={enrollForm.amountPaid || ''}
                         onChange={e => setEnrollForm({ ...enrollForm, amountPaid: Number(e.target.value) })}
                         dir="ltr"
                       />
                     </div>
-                    <div>
-                      <Label>حالة الدفع</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="enroll-payment-status-tab">حالة الدفع</Label>
                       <Select value={enrollForm.paymentStatus} onValueChange={v => setEnrollForm({ ...enrollForm, paymentStatus: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectTrigger id="enroll-payment-status-tab"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="paid">مدفوع</SelectItem>
                           <SelectItem value="partial">جزئي</SelectItem>
@@ -989,16 +1052,21 @@ export function StudentDetail() {
                 <Button className="gap-2"><Plus size={16} /> شراء حساب ممول</Button>
               </DialogTrigger>
               <DialogContent dir="rtl">
-                <DialogHeader><DialogTitle>شراء حساب ممول للطالب</DialogTitle></DialogHeader>
+                <DialogHeader>
+                  <DialogTitle>شراء حساب ممول للطالب</DialogTitle>
+                  <DialogDescription>
+                    اختر نوع الحساب والقيمة المدفوعة من قِبَل الطالب.
+                  </DialogDescription>
+                </DialogHeader>
                 <div className="space-y-4">
-                  <div>
-                    <Label>نوع الحساب *</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="funded-account-type-tab">نوع الحساب *</Label>
                     <Select value={fundedForm.accountTypeId} onValueChange={v => {
                       setFundedForm({ ...fundedForm, accountTypeId: v })
                       const at = accountTypes.find(a => a.id === v)
                       if (at) setFundedForm(prev => ({ ...prev, amountPaid: at.sellingPrice }))
                     }}>
-                      <SelectTrigger><SelectValue placeholder="اختر نوع الحساب" /></SelectTrigger>
+                      <SelectTrigger id="funded-account-type-tab"><SelectValue placeholder="اختر نوع الحساب" /></SelectTrigger>
                       <SelectContent>
                         {accountTypes.filter(a => a.isActive).map(a => (
                           <SelectItem key={a.id} value={a.id}>
@@ -1033,19 +1101,21 @@ export function StudentDetail() {
                     )
                   })()}
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>المبلغ المدفوع</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="funded-amount-paid-tab">المبلغ المدفوع</Label>
                       <Input
+                        id="funded-amount-paid-tab"
+                        name="amountPaid"
                         type="number"
                         value={fundedForm.amountPaid || ''}
                         onChange={e => setFundedForm({ ...fundedForm, amountPaid: Number(e.target.value) })}
                         dir="ltr"
                       />
                     </div>
-                    <div>
-                      <Label>حالة الدفع</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="funded-payment-status-tab">حالة الدفع</Label>
                       <Select value={fundedForm.paymentStatus} onValueChange={v => setFundedForm({ ...fundedForm, paymentStatus: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectTrigger id="funded-payment-status-tab"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="paid">مدفوع</SelectItem>
                           <SelectItem value="partial">جزئي</SelectItem>
@@ -1150,11 +1220,18 @@ export function StudentDetail() {
                 <Button className="gap-2"><Plus size={16} /> تسجيل دفعة</Button>
               </DialogTrigger>
               <DialogContent dir="rtl">
-                <DialogHeader><DialogTitle>تسجيل دفعة جديدة</DialogTitle></DialogHeader>
+                <DialogHeader>
+                  <DialogTitle>تسجيل دفعة يدوية</DialogTitle>
+                  <DialogDescription>
+                    إضافة دفعة مالية مباشرة لسجل الطالب.
+                  </DialogDescription>
+                </DialogHeader>
                 <div className="space-y-4">
-                  <div>
-                    <Label>المبلغ *</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="manual-payment-amount">المبلغ *</Label>
                     <Input
+                      id="manual-payment-amount"
+                      name="amount"
                       type="number"
                       value={paymentForm.amount || ''}
                       onChange={e => setPaymentForm({ ...paymentForm, amount: Number(e.target.value) })}
@@ -1163,10 +1240,10 @@ export function StudentDetail() {
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>طريقة الدفع</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="manual-payment-method">طريقة الدفع</Label>
                       <Select value={paymentForm.method} onValueChange={v => setPaymentForm({ ...paymentForm, method: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectTrigger id="manual-payment-method"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="cash">نقداً</SelectItem>
                           <SelectItem value="bank_transfer">تحويل بنكي</SelectItem>
@@ -1175,9 +1252,11 @@ export function StudentDetail() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <Label>التاريخ</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="manual-payment-date">التاريخ</Label>
                       <Input
+                        id="manual-payment-date"
+                        name="date"
                         type="date"
                         value={paymentForm.date}
                         onChange={e => setPaymentForm({ ...paymentForm, date: e.target.value })}
@@ -1185,9 +1264,11 @@ export function StudentDetail() {
                       />
                     </div>
                   </div>
-                  <div>
-                    <Label>الوصف</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="manual-payment-description">الوصف</Label>
                     <Textarea
+                      id="manual-payment-description"
+                      name="description"
                       value={paymentForm.description}
                       onChange={e => setPaymentForm({ ...paymentForm, description: e.target.value })}
                     />
@@ -1311,6 +1392,8 @@ export function StudentDetail() {
             <CardContent>
               {isEditingNotes ? (
                 <Textarea
+                  id="student-notes-edit"
+                  name="notes"
                   value={notesValue}
                   onChange={e => setNotesValue(e.target.value)}
                   placeholder="أضف ملاحظات عن الطالب..."

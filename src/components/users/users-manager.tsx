@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Switch } from "@/components/ui/switch"
-import { UserCog, Plus, ShieldCheck, HelpCircle } from "lucide-react"
+import { UserCog, Plus, ShieldCheck, HelpCircle, Trash2, Edit } from "lucide-react"
 import { toast } from "sonner"
 
 type User = {
@@ -20,6 +21,7 @@ type User = {
   canManageFunded: boolean
   canManageAccounting: boolean
   canManagePartners: boolean
+  canManageDebts: boolean
   canManageUsers: boolean
 }
 
@@ -28,6 +30,8 @@ export function UsersManager() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [userToDelete, setUserToDelete] = useState<{id: string, username: string} | null>(null)
   
   // Form State
   const [formData, setFormData] = useState({
@@ -39,6 +43,7 @@ export function UsersManager() {
     canManageFunded: true,
     canManageAccounting: true,
     canManagePartners: true,
+    canManageDebts: true,
     canManageUsers: false,
   })
 
@@ -107,6 +112,7 @@ export function UsersManager() {
       canManageFunded: true,
       canManageAccounting: true,
       canManagePartners: true,
+      canManageDebts: true,
       canManageUsers: false,
     })
     setIsDialogOpen(true)
@@ -120,14 +126,20 @@ export function UsersManager() {
     setIsDialogOpen(true)
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("هل أنت متأكد من حذف هذا المستخدم؟")) return
+  const handleDelete = async (id: string, username: string) => {
+    setUserToDelete({ id, username })
+    setDeleteConfirmOpen(true)
+  }
 
+  const confirmDelete = async () => {
+    if (!userToDelete) return
     try {
-      const res = await fetch(`/api/users/${id}`, { method: "DELETE" })
+      const res = await fetch(`/api/users/${userToDelete.id}`, { method: "DELETE" })
       if (res.ok) {
+        setUsers(users.filter(u => u.id !== userToDelete.id))
         toast.success("تم حذف المستخدم")
-        fetchUsers()
+        setDeleteConfirmOpen(false)
+        setUserToDelete(null)
       } else {
         toast.error("فشل في حذف المستخدم")
       }
@@ -169,11 +181,16 @@ export function UsersManager() {
           <DialogContent className="sm:max-w-[500px]" dir="rtl">
             <DialogHeader>
               <DialogTitle>{formData.id ? "تعديل مستخدم" : "مستخدم جديد"}</DialogTitle>
+              <DialogDescription>
+                {formData.id ? "قم بتعديل بيانات المدير وصلاحياته هنا." : "أدخل بيانات المدير الجديد وحدد صلاحياته."}
+              </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label>اسم المستخدم</Label>
+                <Label htmlFor="user-username">اسم المستخدم</Label>
                 <Input
+                  id="user-username"
+                  name="username"
                   value={formData.username}
                   onChange={e => setFormData({ ...formData, username: e.target.value })}
                   dir="ltr"
@@ -181,8 +198,10 @@ export function UsersManager() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label>{formData.id ? "كلمة المرور الجديدة (اختياري)" : "كلمة المرور"}</Label>
+                <Label htmlFor="user-password">{formData.id ? "كلمة المرور الجديدة (اختياري)" : "كلمة المرور"}</Label>
                 <Input
+                  id="user-password"
+                  name="password"
                   type="password"
                   value={formData.password}
                   onChange={e => setFormData({ ...formData, password: e.target.value })}
@@ -217,6 +236,10 @@ export function UsersManager() {
                   <div className="flex items-center justify-between">
                     <Label className="cursor-pointer" htmlFor="p-partners">إدارة الشركاء الإضافيين (العمولات)</Label>
                     <Switch id="p-partners" checked={formData.canManagePartners} onCheckedChange={(c) => setFormData({...formData, canManagePartners: c})} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label className="cursor-pointer" htmlFor="p-debts">إدارة الديون وسدادها</Label>
+                    <Switch id="p-debts" checked={formData.canManageDebts} onCheckedChange={(c) => setFormData({...formData, canManageDebts: c})} />
                   </div>
                   <div className="flex items-center justify-between bg-primary/10 p-3 rounded-xl border border-primary/20">
                     <Label className="cursor-pointer font-bold text-primary" htmlFor="p-users">صلاحيات المدير العام (سوبر أدمن)</Label>
@@ -263,12 +286,13 @@ export function UsersManager() {
                       {user.canManageFunded && <span className="text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 px-2 py-1 rounded-full">الممولة</span>}
                       {user.canManageAccounting && <span className="text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-1 rounded-full">المحاسبة</span>}
                       {user.canManagePartners && <span className="text-xs bg-lime-500/10 text-lime-600 dark:text-lime-400 px-2 py-1 rounded-full">الشركاء</span>}
+                      {user.canManageDebts && <span className="text-xs bg-red-500/10 text-red-600 dark:text-red-400 px-2 py-1 rounded-full">الديون</span>}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Button variant="outline" size="sm" onClick={() => openEditDialog(user)}>تعديل</Button>
-                      <Button variant="destructive" size="sm" onClick={() => handleDelete(user.id)}>حذف</Button>
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(user.id, user.username)}>حذف</Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -277,6 +301,21 @@ export function UsersManager() {
           </TableBody>
         </Table>
       </Card>
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد حذف المستخدم</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل أنت متأكد من حذف المستخدم &quot;{userToDelete?.username}&quot;؟ لا يمكن التراجع عن هذا الإجراء وسيتم سحب جميع صلاحيات الوصول الخاصة به فوراً.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel onClick={() => setUserToDelete(null)}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">تأكيد الحذف</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

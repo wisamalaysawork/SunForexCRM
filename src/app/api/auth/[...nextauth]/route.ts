@@ -42,6 +42,7 @@ export const authOptions: NextAuthOptions = {
           canManageFunded: user.canManageFunded,
           canManageAccounting: user.canManageAccounting,
           canManagePartners: user.canManagePartners,
+          canManageDebts: user.canManageDebts,
           canManageUsers: user.canManageUsers,
         };
       }
@@ -58,6 +59,7 @@ export const authOptions: NextAuthOptions = {
           canManageFunded: (user as any).canManageFunded,
           canManageAccounting: (user as any).canManageAccounting,
           canManagePartners: (user as any).canManagePartners,
+          canManageDebts: (user as any).canManageDebts,
           canManageUsers: (user as any).canManageUsers,
         };
       }

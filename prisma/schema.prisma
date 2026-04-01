@@ -18,6 +18,7 @@ model Student {
   email         String?
   status        String   @default("active") // active, inactive
   notes         String?
+  address       String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   deletedAt     DateTime?
@@ -106,17 +107,17 @@ model Expense {
 // ============ Payments (Income tracking) ============
 model Payment {
   id          String   @id @default(cuid())
-  studentId   String
+  studentId   String?
   amount      Float
   method      String?  // cash, bank_transfer, crypto, other
   description String?
   date        DateTime @default(now())
-  month       String   // format: "2026-03"
+  month       String?  // format: "2026-03"
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   deletedAt   DateTime?
 
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
 }
 
 // ============ Users & Authentication ============
@@ -129,6 +130,7 @@ model User {
   canManageFunded     Boolean  @default(true)
   canManageAccounting Boolean  @default(true)
   canManagePartners   Boolean  @default(true)
+  canManageDebts      Boolean  @default(true)
   canManageUsers      Boolean  @default(false)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt

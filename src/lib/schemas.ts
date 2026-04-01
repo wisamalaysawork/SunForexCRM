@@ -6,6 +6,7 @@ export const StudentSchema = z.object({
   email: z.string().email("البريد الإلكتروني غير صالح").optional().or(z.literal('')),
   status: z.enum(['active', 'inactive']).default('active'),
   notes: z.string().optional(),
+  address: z.string().optional(),
 });
 
 export const CourseSchema = z.object({

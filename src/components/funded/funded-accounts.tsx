@@ -660,8 +660,10 @@ export function FundedAccountsManager() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label className="mb-1.5 block">اسم الحساب <span className="text-red-500">*</span></Label>
+              <Label htmlFor="account-name" className="mb-1.5 block">اسم الحساب <span className="text-red-500">*</span></Label>
               <Input
+                id="account-name"
+                name="name"
                 value={form.name}
                 onChange={e => setForm({ ...form, name: e.target.value })}
                 placeholder="مثال: حساب 5,000$"
@@ -669,8 +671,10 @@ export function FundedAccountsManager() {
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <Label className="mb-1.5 block">حجم الحساب ($)</Label>
+                <Label htmlFor="account-size" className="mb-1.5 block">حجم الحساب ($)</Label>
                 <Input
+                  id="account-size"
+                  name="accountSize"
                   type="number"
                   value={form.accountSize || ''}
                   onChange={e => setForm({ ...form, accountSize: Number(e.target.value) })}
@@ -679,8 +683,10 @@ export function FundedAccountsManager() {
                 />
               </div>
               <div>
-                <Label className="mb-1.5 block">سعر البيع ($)</Label>
+                <Label htmlFor="selling-price" className="mb-1.5 block">سعر البيع ($)</Label>
                 <Input
+                  id="selling-price"
+                  name="sellingPrice"
                   type="number"
                   value={form.sellingPrice || ''}
                   onChange={e => setForm({ ...form, sellingPrice: Number(e.target.value) })}
@@ -689,8 +695,10 @@ export function FundedAccountsManager() {
                 />
               </div>
               <div>
-                <Label className="mb-1.5 block">التكلفة ($)</Label>
+                <Label htmlFor="cost-price" className="mb-1.5 block">التكلفة ($)</Label>
                 <Input
+                  id="cost-price"
+                  name="costPrice"
                   type="number"
                   value={form.costPrice || ''}
                   onChange={e => setForm({ ...form, costPrice: Number(e.target.value) })}
@@ -741,8 +749,12 @@ export function FundedAccountsManager() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Switch checked={form.isActive} onCheckedChange={v => setForm({ ...form, isActive: v })} />
-              <Label>حساب نشط</Label>
+              <Switch 
+                id="account-active"
+                checked={form.isActive} 
+                onCheckedChange={v => setForm({ ...form, isActive: v })} 
+              />
+              <Label htmlFor="account-active">حساب نشط</Label>
             </div>
           </div>
           <DialogFooter>
@@ -796,10 +808,12 @@ export function FundedAccountsManager() {
 
             {/* Student Search */}
             <div>
-              <Label className="mb-1.5 block">اختر الطالب <span className="text-red-500">*</span></Label>
+              <Label htmlFor="student-search-input" className="mb-1.5 block">اختر الطالب <span className="text-red-500">*</span></Label>
               <div className="relative">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
                 <Input
+                  id="student-search-input"
+                  name="studentSearch"
                   value={studentSearch}
                   onChange={e => setStudentSearch(e.target.value)}
                   placeholder="ابحث بالاسم أو رقم الهاتف..."
@@ -852,9 +866,9 @@ export function FundedAccountsManager() {
 
             {/* Payment Status */}
             <div>
-              <Label className="mb-1.5 block">حالة الدفع</Label>
+              <Label htmlFor="sale-payment-status" className="mb-1.5 block">حالة الدفع</Label>
               <Select value={studentForm.paymentStatus} onValueChange={v => setStudentForm(prev => ({ ...prev, paymentStatus: v }))}>
-                <SelectTrigger>
+                <SelectTrigger id="sale-payment-status">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -867,8 +881,10 @@ export function FundedAccountsManager() {
 
             {/* Amount Paid */}
             <div>
-              <Label className="mb-1.5 block">المبلغ المدفوع ($)</Label>
+              <Label htmlFor="sale-amount-paid" className="mb-1.5 block">المبلغ المدفوع ($)</Label>
               <Input
+                id="sale-amount-paid"
+                name="amountPaid"
                 type="number"
                 value={studentForm.amountPaid || ''}
                 onChange={e => setStudentForm(prev => ({ ...prev, amountPaid: Number(e.target.value) }))}

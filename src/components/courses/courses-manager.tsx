@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -402,19 +402,26 @@ export function CoursesManager() {
           <DialogContent dir="rtl" className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>{editCourse ? 'تعديل الدورة' : 'إنشاء دورة جديدة'}</DialogTitle>
+              <DialogDescription>
+                {editCourse ? 'قم بتعديل بيانات الدورة الحالية هنا.' : 'أدخل بيانات الدورة التدريبية الجديدة.'}
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label>اسم الدورة *</Label>
+                <Label htmlFor="course-name">اسم الدورة *</Label>
                 <Input
+                  id="course-name"
+                  name="name"
                   value={form.name}
                   onChange={e => setForm({ ...form, name: e.target.value })}
                   placeholder="مثال: دورة التداول الأساسية"
                 />
               </div>
               <div className="space-y-2">
-                <Label>الوصف</Label>
+                <Label htmlFor="course-description">الوصف</Label>
                 <Textarea
+                  id="course-description"
+                  name="description"
                   value={form.description}
                   onChange={e => setForm({ ...form, description: e.target.value })}
                   placeholder="وصف مختصر للدورة..."
@@ -422,8 +429,10 @@ export function CoursesManager() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>السعر ($)</Label>
+                <Label htmlFor="course-price">السعر ($)</Label>
                 <Input
+                  id="course-price"
+                  name="price"
                   type="number"
                   value={form.price || ''}
                   onChange={e => setForm({ ...form, price: Number(e.target.value) })}
@@ -433,10 +442,11 @@ export function CoursesManager() {
               </div>
               <div className="flex items-center gap-3">
                 <Switch
+                  id="course-active"
                   checked={form.isActive}
                   onCheckedChange={v => setForm({ ...form, isActive: v })}
                 />
-                <Label>دورة نشطة</Label>
+                <Label htmlFor="course-active">دورة نشطة</Label>
               </div>
             </div>
             <DialogFooter>
@@ -798,9 +808,12 @@ export function CoursesManager() {
         <DialogContent dir="rtl" className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Users className="text-primary" size={20} />
-              تسجيل طالب جديد
+              <Users className="text-emerald-600" size={20} />
+              تسجيل طالب في دورة {selectedCourse?.name}
             </DialogTitle>
+            <DialogDescription>
+              اختر طالباً من القائمة وحدد مبلغ الدفع المبدئي لتسجيله في هذه الدورة.
+            </DialogDescription>
           </DialogHeader>
 
           {selectedCourse && (
@@ -816,17 +829,19 @@ export function CoursesManager() {
 
               {/* Student Select */}
               <div className="space-y-2">
-                <Label>اختر الطالب *</Label>
+                <Label htmlFor="enroll-student-select">اختر الطالب *</Label>
                 <Select
                   value={enrollForm.studentId}
                   onValueChange={v => setEnrollForm({ ...enrollForm, studentId: v })}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger id="enroll-student-select" className="w-full">
                     <SelectValue placeholder="اختر طالباً..." />
                   </SelectTrigger>
                   <SelectContent>
                     <div className="p-2">
                       <Input
+                        id="enroll-student-search"
+                        name="student-search"
                         placeholder="بحث بالاسم أو الهاتف..."
                         value={studentSearch}
                         onChange={e => setStudentSearch(e.target.value)}
@@ -855,7 +870,7 @@ export function CoursesManager() {
 
               {/* Payment Status */}
               <div className="space-y-2">
-                <Label>حالة الدفع</Label>
+                <Label htmlFor="enroll-payment-status">حالة الدفع</Label>
                 <Select
                   value={enrollForm.paymentStatus}
                   onValueChange={v => {
@@ -866,7 +881,7 @@ export function CoursesManager() {
                     })
                   }}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger id="enroll-payment-status" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -891,10 +906,12 @@ export function CoursesManager() {
 
               {/* Amount Paid */}
               <div className="space-y-2">
-                <Label>المبلغ المدفوع ($)</Label>
+                <Label htmlFor="enroll-amount-paid">المبلغ المدفوع ($)</Label>
                 <Input
+                  id="enroll-amount-paid"
+                  name="amountPaid"
                   type="number"
-                  value={enrollForm.paymentStatus === 'paid' ? selectedCourse.price : enrollForm.amountPaid || ''}
+                  value={enrollForm.amountPaid || ''}
                   onChange={e => setEnrollForm({ ...enrollForm, amountPaid: Number(e.target.value) })}
                   dir="ltr"
                   disabled={enrollForm.paymentStatus === 'paid'}
@@ -940,6 +957,9 @@ export function CoursesManager() {
         <DialogContent dir="rtl" className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-red-600">تأكيد الحذف</DialogTitle>
+            <DialogDescription>
+              هذا الإجراء سيقوم بحذف الدورة وجميع التسجيلات المرتبطة بها بشكل نهائي.
+            </DialogDescription>
           </DialogHeader>
           <div className="py-2">
             <p className="text-muted-foreground">

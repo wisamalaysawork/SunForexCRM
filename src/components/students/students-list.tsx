@@ -5,7 +5,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -21,6 +22,7 @@ interface Student {
   email: string | null
   status: string
   notes: string | null
+  address: string | null
   totalPaid: number
   createdAt: string
   courseEnrollments: any[]
@@ -33,8 +35,10 @@ export function StudentsList() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [studentToDelete, setStudentToDelete] = useState<{id: string, name: string} | null>(null)
   const [editStudent, setEditStudent] = useState<Student | null>(null)
-  const [form, setForm] = useState({ name: '', phone: '', email: '', status: 'active', notes: '' })
+  const [form, setForm] = useState({ name: '', phone: '', email: '', status: 'active', notes: '', address: '' })
 
   const { data: students = [], isLoading } = useStudents({
     search,
@@ -45,13 +49,20 @@ export function StudentsList() {
 
   const openCreate = () => {
     setEditStudent(null)
-    setForm({ name: '', phone: '', email: '', status: 'active', notes: '' })
+    setForm({ name: '', phone: '', email: '', status: 'active', notes: '', address: '' })
     setDialogOpen(true)
   }
 
   const openEdit = (s: Student) => {
     setEditStudent(s)
-    setForm({ name: s.name, phone: s.phone || '', email: s.email || '', status: s.status, notes: s.notes || '' })
+    setForm({ 
+      name: s.name, 
+      phone: s.phone || '', 
+      email: s.email || '', 
+      status: s.status, 
+      notes: s.notes || '',
+      address: s.address || ''
+    })
     setDialogOpen(true)
   }
 
@@ -72,9 +83,15 @@ export function StudentsList() {
     }
   }
 
-  const handleDelete = (id: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذا الطالب؟')) return
-    deleteStudent.mutate(id)
+  const handleDelete = async () => {
+    if (!studentToDelete) return
+    try {
+      await deleteStudent.mutateAsync(studentToDelete.id)
+      setDeleteDialogOpen(false)
+      setStudentToDelete(null)
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   const viewDetail = (id: string) => {
@@ -98,35 +115,74 @@ export function StudentsList() {
           <DialogContent className="max-w-md" dir="rtl">
             <DialogHeader>
               <DialogTitle>{editStudent ? 'تعديل بيانات الطالب' : 'إضافة طالب جديد'}</DialogTitle>
+              <DialogDescription>
+                {editStudent ? 'قم بتعديل بيانات الطالب الحالية هنا.' : 'أدخل بيانات الطالب الجديد الأساسية.'}
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <div>
-                <Label>الاسم *</Label>
-                <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="اسم الطالب" />
+              <div className="space-y-2">
+                <Label htmlFor="student-name">الاسم *</Label>
+                <Input 
+                  id="student-name"
+                  name="name"
+                  value={form.name} 
+                  onChange={e => setForm({ ...form, name: e.target.value })} 
+                  placeholder="اسم الطالب" 
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>الهاتف</Label>
-                  <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="رقم الهاتف" dir="ltr" />
+                <div className="space-y-2">
+                  <Label htmlFor="student-phone">الهاتف</Label>
+                  <Input 
+                    id="student-phone"
+                    name="phone"
+                    value={form.phone} 
+                    onChange={e => setForm({ ...form, phone: e.target.value })} 
+                    placeholder="رقم الهاتف" 
+                    dir="ltr" 
+                  />
                 </div>
-                <div>
-                  <Label>الإيميل</Label>
-                  <Input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="البريد الإلكتروني" dir="ltr" />
+                <div className="space-y-2">
+                  <Label htmlFor="student-email">الإيميل</Label>
+                  <Input 
+                    id="student-email"
+                    name="email"
+                    value={form.email} 
+                    onChange={e => setForm({ ...form, email: e.target.value })} 
+                    placeholder="البريد الإلكتروني" 
+                    dir="ltr" 
+                  />
                 </div>
               </div>
-              <div>
-                <Label>الحالة</Label>
+              <div className="space-y-2">
+                <Label htmlFor="student-status">الحالة</Label>
                 <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="student-status"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">فعال</SelectItem>
                     <SelectItem value="inactive">غير فعال</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>ملاحظات</Label>
-                <Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="ملاحظات إضافية..." />
+              <div className="space-y-2">
+                <Label htmlFor="student-address">العنوان</Label>
+                <Input 
+                  id="student-address"
+                  name="address"
+                  value={form.address} 
+                  onChange={e => setForm({ ...form, address: e.target.value })} 
+                  placeholder="مثلاً: رام الله، شارع الإرسال" 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="student-notes">ملاحظات</Label>
+                <Textarea 
+                  id="student-notes"
+                  name="notes"
+                  value={form.notes} 
+                  onChange={e => setForm({ ...form, notes: e.target.value })} 
+                  placeholder="ملاحظات إضافية..." 
+                />
               </div>
               <Button onClick={handleSave} disabled={createStudent.isPending || updateStudent.isPending} className="w-full">
                 {editStudent ? 'تحديث' : 'إضافة'}
@@ -179,6 +235,8 @@ export function StudentsList() {
         <div className="relative flex-1">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
           <Input
+            id="search-students"
+            name="search"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="بحث بالاسم، الهاتف، أو الإيميل..."
@@ -277,7 +335,7 @@ export function StudentsList() {
                           <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(student)} title="تعديل">
                             <Edit size={16} />
                           </Button>
-                          <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500" onClick={() => handleDelete(student.id)} title="حذف" disabled={deleteStudent.isPending}>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500" onClick={() => { setStudentToDelete({id: student.id, name: student.name}); setDeleteDialogOpen(true); }} title="حذف">
                             <Trash2 size={16} />
                           </Button>
                         </div>
@@ -290,6 +348,23 @@ export function StudentsList() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>حذف الطالب</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل أنت متأكد من حذف الطالب &quot;{studentToDelete?.name}&quot;؟ سيتم حذف جميع بيانات الطالب وتسجيلاته ومدفوعاته نهائياً. لا يمكن التراجع عن هذا الإجراء.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel onClick={() => setStudentToDelete(null)}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">
+              حذف نهائي
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
