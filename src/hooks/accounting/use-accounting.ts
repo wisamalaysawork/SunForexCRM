@@ -10,19 +10,21 @@ export function useAccountingData(month: string) {
         fetch(`/api/payments?month=${month}`),
         fetch(`/api/enrollments`),
         fetch(`/api/funded-sales`),
-        fetch(`/api/partner-incomes?month=${month}`)
+        fetch(`/api/partner-incomes?month=${month}`),
+        fetch(`/api/debts/payments?month=${month}`)
       ]);
 
-      if (!expRes.ok || !payRes.ok || !enrollRes.ok || !fundedRes.ok || !partnerIncomeRes.ok) {
+      if (!expRes.ok || !payRes.ok || !enrollRes.ok || !fundedRes.ok || !partnerIncomeRes.ok || !debtPayRes.ok) {
         throw new Error('Failed to fetch data');
       }
 
-      const [expenses, payments, allEnrollments, allFundedSales, partnerIncomes] = await Promise.all([
+      const [expenses, payments, allEnrollments, allFundedSales, partnerIncomes, debtPayments] = await Promise.all([
         expRes.json(),
         payRes.json(),
         enrollRes.json(),
         fundedRes.json(),
-        partnerIncomeRes.json()
+        partnerIncomeRes.json(),
+        debtPayRes.json()
       ]);
 
       // Filter enrollments/funded by month clientside for now as api doesn't support month filtering on get yet
@@ -38,7 +40,7 @@ export function useAccountingData(month: string) {
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === month;
       });
 
-      return { expenses, payments, monthEnrollments, monthFundedSales, partnerIncomes };
+      return { expenses, payments, monthEnrollments, monthFundedSales, partnerIncomes, debtPayments };
     }
   });
 }

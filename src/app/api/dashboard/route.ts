@@ -102,6 +102,19 @@ export async function GET(request: NextRequest) {
       _count: true,
     })
 
+    const debtPayments = await db.debtPayment.aggregate({
+      where: {
+        ...baseWhere,
+        ...(month && { 
+          date: { 
+            gte: startDate!, 
+            lt: endDate! 
+          } 
+        }),
+      },
+      _sum: { amount: true },
+    })
+
     // ============ Funded Costs (Cost Price) ============
     const monthFundedSalesData = await db.fundedAccountSale.findMany({
       where: {
@@ -155,7 +168,8 @@ export async function GET(request: NextRequest) {
       (fundedSalesRevenue._sum.amountPaid || 0) +
       (partnerIncome._sum.amount || 0)
     const manualExpenses = totalExpenses._sum.amount || 0
-    const totalExpensesWithCosts = manualExpenses + fundedCosts
+    const debtRepayments = debtPayments._sum.amount || 0
+    const totalExpensesWithCosts = manualExpenses + fundedCosts + debtRepayments
     const profit = totalIncome - totalExpensesWithCosts
 
     return NextResponse.json({
@@ -193,6 +207,7 @@ export async function GET(request: NextRequest) {
           total: totalExpensesWithCosts,
           manual: manualExpenses,
           fundedCosts: fundedCosts,
+          debtRepayments: debtRepayments,
           byCategory: expensesByCategory,
         },
         profit,

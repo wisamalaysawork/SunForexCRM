@@ -56,6 +56,7 @@ export default function AccountingComponent() {
   const monthEnrollments = data?.monthEnrollments || []
   const monthFundedSales = data?.monthFundedSales || []
   const partnerIncomes = data?.partnerIncomes || []
+  const debtPayments = data?.debtPayments || []
 
   // Income calculations
   const enrollmentIncome = monthEnrollments
@@ -76,8 +77,10 @@ export default function AccountingComponent() {
   const fundedCosts = monthFundedSales
     .filter((s: any) => s.paymentStatus !== 'cancelled')
     .reduce((sum: number, s: any) => sum + (s.accountType?.costPrice || 0), 0)
+  
+  const debtRepayments = debtPayments.reduce((sum: number, p: any) => sum + p.amount, 0)
 
-  const totalExpenses = manualExpenses + fundedCosts
+  const totalExpenses = manualExpenses + fundedCosts + debtRepayments
   const netProfit = totalIncome - totalExpenses
 
   // Transaction history compilation
@@ -150,6 +153,17 @@ export default function AccountingComponent() {
       date: new Date(s.soldAt),
       icon: DollarSign,
       color: 'text-pink-500'
+    })),
+    // Expenses: Debt Repayments
+    ...debtPayments.map((p: any) => ({
+      id: `debt-${p.id}`,
+      type: 'expense',
+      category: 'debt_payment',
+      title: `سداد دين: ${p.debt?.source || 'قرض'}`,
+      amount: p.amount,
+      date: new Date(p.date),
+      icon: Handshake,
+      color: 'text-blue-500'
     }))
   ].sort((a, b) => b.date.getTime() - a.date.getTime())
 
