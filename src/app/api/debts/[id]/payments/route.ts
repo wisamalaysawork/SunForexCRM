@@ -4,10 +4,10 @@ import { NextResponse } from "next/server";
 // POST /api/debts/[id]/payments - Add payment to debt
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await req.json();
     const { amount, date, notes } = body;
 
@@ -25,7 +25,7 @@ export async function POST(
     });
 
     // Check if debt is fully paid
-    const debt = await db.debt.findUnique({
+    const debt = await db.debt.findFirst({
       where: { id, deletedAt: null },
       include: { payments: { where: { deletedAt: null } } }
     });

@@ -4,10 +4,10 @@ import { NextResponse } from "next/server";
 // PUT /api/debts/[id] - Update debt
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await req.json();
     const { amount, source, description, status, startDate } = body;
 
@@ -32,10 +32,10 @@ export async function PUT(
 // DELETE /api/debts/[id] - Soft delete debt
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     await db.debt.update({
       where: { id },

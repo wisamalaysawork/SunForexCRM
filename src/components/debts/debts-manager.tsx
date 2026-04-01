@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
@@ -97,6 +97,7 @@ export default function DebtsManager() {
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>إضافة دين جديد</DialogTitle>
+              <DialogDescription>أدخل تفاصيل الدين الجديد لتتبعه في النظام</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
@@ -288,6 +289,7 @@ export default function DebtsManager() {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>تسجيل دفعة سداد</DialogTitle>
+            <DialogDescription>سجل مبالغ الدفعات لإتمام عملية سداد الدين</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
