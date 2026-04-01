@@ -1,0 +1,163 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============ CRM: Students ============
+model Student {
+  id            String   @id @default(cuid())
+  name          String
+  phone         String?
+  email         String?
+  status        String   @default("active") // active, inactive
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+
+  courseEnrollments   CourseEnrollment[]
+  fundedAccountSales  FundedAccountSale[]
+  payments            Payment[]
+}
+
+// ============ Courses ============
+model Course {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  enrollments CourseEnrollment[]
+}
+
+// ============ Course Enrollments ============
+model CourseEnrollment {
+  id            String   @id @default(cuid())
+  studentId     String
+  courseId      String
+  enrolledAt    DateTime @default(now())
+  paymentStatus String   @default("pending") // pending, paid, partial, cancelled
+  amountPaid    Float    @default(0)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course  Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+// ============ Funded Account Types ============
+model FundedAccountType {
+  id              String   @id @default(cuid())
+  name            String              // e.g. "حساب 5000$"
+  accountSize     Float               // حجم الحساب 5000
+  sellingPrice    Float               // سعر البيع للطالب 100$
+  costPrice       Float               // تكلفة الشراء من المزود 40$
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  sales FundedAccountSale[]
+}
+
+// ============ Funded Account Sales ============
+model FundedAccountSale {
+  id              String   @id @default(cuid())
+  studentId       String
+  accountTypeId   String
+  soldAt          DateTime @default(now())
+  paymentStatus   String   @default("pending") // pending, paid, partial, cancelled
+  amountPaid      Float    @default(0)
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  student      Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  accountType  FundedAccountType @relation(fields: [accountTypeId], references: [id], onDelete: Cascade)
+}
+
+// ============ Expenses ============
+model Expense {
+  id          String   @id @default(cuid())
+  category    String   // rent, bills, salaries, marketing, software, other
+  amount      Float
+  description String?
+  date        DateTime
+  month       String   // format: "2026-03" for monthly filtering
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+}
+
+// ============ Payments (Income tracking) ============
+model Payment {
+  id          String   @id @default(cuid())
+  studentId   String
+  amount      Float
+  method      String?  // cash, bank_transfer, crypto, other
+  description String?
+  date        DateTime @default(now())
+  month       String   // format: "2026-03"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+// ============ Users & Authentication ============
+model User {
+  id                  String   @id @default(cuid())
+  username            String   @unique
+  password            String
+  canManageStudents   Boolean  @default(true)
+  canManageCourses    Boolean  @default(true)
+  canManageFunded     Boolean  @default(true)
+  canManageAccounting Boolean  @default(true)
+  canManagePartners   Boolean  @default(true)
+  canManageUsers      Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  deletedAt           DateTime?
+}
+
+// ============ Partners & Extra Income ============
+model Partner {
+  id          String   @id @default(cuid())
+  name        String   // e.g. "FundedNext"
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  incomes     PartnerIncome[]
+}
+
+model PartnerIncome {
+  id          String   @id @default(cuid())
+  partnerId   String
+  amount      Float
+  description String?
+  date        DateTime @default(now())
+  month       String   // format: "2026-03"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  partner     Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+}

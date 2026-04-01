@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#059669"/>
+      <stop offset="100%" style="stop-color:#047857"/>
+    </linearGradient>
+    <linearGradient id="sun" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FCD34D"/>
+      <stop offset="100%" style="stop-color:#F59E0B"/>
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="20" fill="url(#bg)"/>
+  <g transform="translate(50,50)">
+    <!-- Sun -->
+    <circle r="15" fill="url(#sun)"/>
+    <!-- Rays -->
+    <line x1="0" y1="-18" x2="0" y2="-24" stroke="#FCD34D" stroke-width="3" stroke-linecap="round"/>
+    <line x1="17" y1="-9" x2="22" y2="-12" stroke="#FCD34D" stroke-width="3" stroke-linecap="round"/>
+    <line x1="18" y1="0" x2="24" y2="0" stroke="#FCD34D" stroke-width="3" stroke-linecap="round"/>
+    <line x1="-18" y1="0" x2="-24" y2="0" stroke="#FCD34D" stroke-width="3" stroke-linecap="round"/>
+    <line x1="0" y1="18" x2="0" y2="24" stroke="#FCD34D" stroke-width="3" stroke-linecap="round"/>
+    <line x1="-17" y1="-9" x2="-22" y2="-12" stroke="#FCD34D" stroke-width="3" stroke-linecap="round"/>
+    <!-- Arrow up (trend) -->
+    <path d="M-12,20 L-4,4 L4,10" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M0,0 L-4,4 L4,4" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" transform="translate(0,-4)"/>
+  </g>
+</svg>
