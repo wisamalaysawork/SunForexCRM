@@ -102,6 +102,26 @@ export async function GET(request: NextRequest) {
       _count: true,
     })
 
+    // ============ Funded Costs (Cost Price) ============
+    const monthFundedSalesData = await db.fundedAccountSale.findMany({
+      where: {
+        ...baseWhere,
+        paymentStatus: { not: 'cancelled' },
+        ...(month && { 
+          createdAt: { 
+            gte: startDate!, 
+            lt: endDate! 
+          } 
+        }),
+      },
+      select: {
+        accountType: {
+          select: { costPrice: true }
+        }
+      }
+    })
+    const fundedCosts = monthFundedSalesData.reduce((sum, s) => sum + (s.accountType?.costPrice || 0), 0)
+
 
     const recentStudents = await db.student.findMany({
       where: baseWhere,
@@ -134,8 +154,9 @@ export async function GET(request: NextRequest) {
       (enrollmentRevenue._sum.amountPaid || 0) +
       (fundedSalesRevenue._sum.amountPaid || 0) +
       (partnerIncome._sum.amount || 0)
-    const expenses = totalExpenses._sum.amount || 0
-    const profit = totalIncome - expenses
+    const manualExpenses = totalExpenses._sum.amount || 0
+    const totalExpensesWithCosts = manualExpenses + fundedCosts
+    const profit = totalIncome - totalExpensesWithCosts
 
     return NextResponse.json({
       period: month || 'all-time',
@@ -169,7 +190,9 @@ export async function GET(request: NextRequest) {
           total: totalIncome,
         },
         expenses: {
-          total: expenses,
+          total: totalExpensesWithCosts,
+          manual: manualExpenses,
+          fundedCosts: fundedCosts,
           byCategory: expensesByCategory,
         },
         profit,
