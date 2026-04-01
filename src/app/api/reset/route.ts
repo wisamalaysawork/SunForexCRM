@@ -18,6 +18,8 @@ export async function POST(request: NextRequest) {
     // Delete in correct order using a transaction for atomicity
     await db.$transaction([
       db.payment.deleteMany({}),
+      db.debtPayment.deleteMany({}),
+      db.debt.deleteMany({}),
       db.courseEnrollment.deleteMany({}),
       db.fundedAccountSale.deleteMany({}),
       db.partnerIncome.deleteMany({}),
