@@ -318,7 +318,7 @@ export function StudentDetail() {
   const totalFundedPrice = fundedSales.reduce((s: number, f: any) => s + (f.accountType?.sellingPrice || 0), 0)
   const totalFundedPaid = fundedSales.reduce((s: number, f: any) => s + (f.amountPaid || 0), 0)
   const totalPrice = totalEnrollPrice + totalFundedPrice
-  const totalPaid = totalEnrollPaid + totalFundedPaid
+  const totalPaid = totalEnrollPaid + totalFundedPaid + totalPayments
   const totalRemaining = totalPrice - totalPaid
 
   const avatarColor = student
@@ -429,7 +429,7 @@ export function StudentDetail() {
                   <DollarSign className="text-green-600" size={16} />
                 </div>
                 <span className="text-sm text-muted-foreground">إجمالي المدفوعات:</span>
-                <span className="text-lg font-bold text-green-600">${totalPayments.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                <span className="text-lg font-bold text-green-600">${totalPaid.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
               </div>
             </div>
 

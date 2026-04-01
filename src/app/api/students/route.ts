@@ -33,11 +33,17 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    const computedStudents = students.map(student => ({
-      ...student,
-      totalPaid: student.payments.reduce((sum, p) => sum + p.amount, 0),
-      payments: undefined
-    }))
+    const computedStudents = students.map(student => {
+      const enrollmentPaid = student.courseEnrollments.reduce((sum, e) => sum + e.amountPaid, 0)
+      const fundedPaid = student.fundedAccountSales.reduce((sum, s) => sum + s.amountPaid, 0)
+      const manualPaid = student.payments.reduce((sum, p) => sum + p.amount, 0)
+      
+      return {
+        ...student,
+        totalPaid: enrollmentPaid + fundedPaid + manualPaid,
+        payments: undefined
+      }
+    })
 
     return NextResponse.json(computedStudents)
   } catch (error) {

@@ -22,9 +22,12 @@ export async function GET(
       return NextResponse.json({ error: 'لم يتم العثور على الطالب' }, { status: 404 })
     }
 
-    const { payments, ...rest } = student
-    const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0)
+    const enrollmentPaid = student.courseEnrollments.reduce((sum, e) => sum + e.amountPaid, 0)
+    const fundedPaid = student.fundedAccountSales.reduce((sum, s) => sum + s.amountPaid, 0)
+    const manualPaid = student.payments.reduce((sum, p) => sum + p.amount, 0)
+    const totalPaid = enrollmentPaid + fundedPaid + manualPaid
 
+    const { payments: _p, ...rest } = student
     return NextResponse.json({ ...rest, totalPaid })
   } catch (error) {
     return NextResponse.json({ error: 'فشل في تحميل الطالب' }, { status: 500 })
