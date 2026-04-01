@@ -266,9 +266,9 @@ export default function AccountingComponent() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Income */}
-        <Card className="bg-gradient-to-br from-emerald-50 to-teal-50/30 border-emerald-100">
+        <Card className="bg-gradient-to-br from-emerald-50 to-teal-50/30 border-emerald-100 shadow-sm">
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div>
@@ -283,31 +283,46 @@ export default function AccountingComponent() {
         </Card>
 
         {/* Expenses */}
-        <Card className="bg-gradient-to-br from-rose-50 to-red-50/30 border-rose-100">
+        <Card className="bg-gradient-to-br from-rose-50 to-red-50/30 border-rose-100 shadow-sm">
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm font-medium text-rose-600 mb-1">إجمالي المصروفات</p>
-                <h3 className="text-3xl font-bold text-rose-900">${totalExpenses.toLocaleString()}</h3>
+                <p className="text-sm font-medium text-rose-600 mb-1">المصاريف التشغيلية</p>
+                <h3 className="text-3xl font-bold text-rose-900">${manualExpenses.toLocaleString()}</h3>
               </div>
               <div className="p-3 bg-rose-100 rounded-xl text-rose-600">
-                <ArrowDownRight className="h-6 w-6" />
+                <TrendingDown className="h-6 w-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Debt Repayments */}
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50/30 border-blue-100 shadow-sm">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-blue-600 mb-1">سداد ديون</p>
+                <h3 className="text-3xl font-bold text-blue-900">${debtRepayments.toLocaleString()}</h3>
+              </div>
+              <div className="p-3 bg-blue-100 rounded-xl text-blue-600">
+                <Handshake className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Net */}
-        <Card className={netProfit >= 0 ? "bg-gradient-to-br from-blue-50 to-indigo-50/30 border-blue-100" : "bg-gradient-to-br from-orange-50 to-red-50/30 border-orange-100"}>
+        <Card className={netProfit >= 0 ? "bg-gradient-to-br from-emerald-50 to-emerald-100/30 border-emerald-200 shadow-sm" : "bg-gradient-to-br from-orange-50 to-red-50/30 border-orange-100 shadow-sm"}>
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div>
-                <p className={`text-sm font-medium mb-1 ${netProfit >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>صافي الربح</p>
-                <h3 className={`text-3xl font-bold ${netProfit >= 0 ? 'text-blue-900' : 'text-orange-900'}`}>
+                <p className={`text-sm font-medium mb-1 ${netProfit >= 0 ? 'text-emerald-700' : 'text-orange-600'}`}>صافي الربح</p>
+                <h3 className={`text-3xl font-bold ${netProfit >= 0 ? 'text-emerald-900' : 'text-orange-900'}`}>
                   ${netProfit.toLocaleString()}
                 </h3>
               </div>
-              <div className={`p-3 rounded-xl ${netProfit >= 0 ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
+              <div className={`p-3 rounded-xl ${netProfit >= 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-orange-100 text-orange-600'}`}>
                 <DollarSign className="h-6 w-6" />
               </div>
             </div>

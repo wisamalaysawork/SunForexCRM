@@ -9,9 +9,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useDebts } from '@/hooks/debts/use-debts'
-import { Plus, Wallet, Handshake, Calendar, History, Trash2, CheckCircle2, AlertCircle, TrendingUp } from 'lucide-react'
+import { Plus, Wallet, Handshake, Calendar, History, Trash2, CheckCircle2, AlertCircle, TrendingUp, Edit } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export default function DebtsManager() {
@@ -25,6 +26,7 @@ export default function DebtsManager() {
     amount: '',
     source: '',
     description: '',
+    status: 'active',
     startDate: new Date().toISOString().split('T')[0]
   })
 
@@ -43,16 +45,36 @@ export default function DebtsManager() {
   }, 0)
   const remainingAmount = totalDebtAmount - totalPaidAmount
 
-  const handleCreateDebt = async () => {
+  const handleCreateOrUpdateDebt = async () => {
     if (!debtForm.amount || !debtForm.source) return
     try {
-      await createDebt(debtForm)
+      if (selectedDebt && debtDialogOpen) {
+        // We are in Edit mode
+        await updateDebt({ id: selectedDebt.id, ...debtForm })
+        toast({ title: "تم تحديث الدين بنجاح" })
+      } else {
+        // We are in Create mode
+        await createDebt(debtForm)
+        toast({ title: "تمت إضافة الدين بنجاح" })
+      }
       setDebtDialogOpen(false)
-      setDebtForm({ amount: '', source: '', description: '', startDate: new Date().toISOString().split('T')[0] })
-      toast({ title: "تمت إضافة الدين بنجاح" })
+      setSelectedDebt(null)
+      setDebtForm({ amount: '', source: '', description: '', status: 'active', startDate: new Date().toISOString().split('T')[0] })
     } catch (e) {
-      toast({ title: "خطأ في إضافة الدين", variant: "destructive" })
+      toast({ title: "خطأ في العملية", variant: "destructive" })
     }
+  }
+
+  const openEditDebt = (debt: any) => {
+    setSelectedDebt(debt)
+    setDebtForm({
+      amount: debt.amount.toString(),
+      source: debt.source,
+      description: debt.description || '',
+      status: debt.status,
+      startDate: new Date(debt.startDate).toISOString().split('T')[0]
+    })
+    setDebtDialogOpen(true)
   }
 
   const handleAddPayment = async () => {
@@ -88,16 +110,22 @@ export default function DebtsManager() {
           <p className="text-muted-foreground mt-1">تتبع القروض والديون المستحقة وجدولة السداد</p>
         </div>
 
-        <Dialog open={debtDialogOpen} onOpenChange={setDebtDialogOpen}>
+        <Dialog open={debtDialogOpen} onOpenChange={(open) => {
+          setDebtDialogOpen(open)
+          if (!open) { setSelectedDebt(null); setDebtForm({ amount: '', source: '', description: '', status: 'active', startDate: new Date().toISOString().split('T')[0] }) }
+        }}>
           <DialogTrigger asChild>
-            <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
+            <Button className="gap-2 bg-blue-600 hover:bg-blue-700" onClick={() => {
+              setSelectedDebt(null)
+              setDebtForm({ amount: '', source: '', description: '', status: 'active', startDate: new Date().toISOString().split('T')[0] })
+            }}>
               <Plus size={18} /> إضافة دين جديد
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>إضافة دين جديد</DialogTitle>
-              <DialogDescription>أدخل تفاصيل الدين الجديد لتتبعه في النظام</DialogDescription>
+              <DialogTitle>{selectedDebt ? 'تعديل بيانات الدين' : 'إضافة دين جديد'}</DialogTitle>
+              <DialogDescription>أدخل تفاصيل الدين لتتبعه في النظام</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
@@ -108,23 +136,38 @@ export default function DebtsManager() {
                   onChange={e => setDebtForm({ ...debtForm, source: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
-                <Label>المبلغ الكلي ($)</Label>
-                <Input 
-                  type="number" 
-                  placeholder="0.00" 
-                  value={debtForm.amount}
-                  onChange={e => setDebtForm({ ...debtForm, amount: e.target.value })}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>المبلغ الكلي ($)</Label>
+                  <Input 
+                    type="number" 
+                    placeholder="0.00" 
+                    value={debtForm.amount}
+                    onChange={e => setDebtForm({ ...debtForm, amount: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>تاريخ أخذ الدين</Label>
+                  <Input 
+                    type="date" 
+                    value={debtForm.startDate}
+                    onChange={e => setDebtForm({ ...debtForm, startDate: e.target.value })}
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>تاريخ أخذ الدين</Label>
-                <Input 
-                  type="date" 
-                  value={debtForm.startDate}
-                  onChange={e => setDebtForm({ ...debtForm, startDate: e.target.value })}
-                />
-              </div>
+
+              {selectedDebt && (
+                <div className="space-y-2">
+                  <Label>حالة الدين</Label>
+                  <Select value={debtForm.status} onValueChange={v => setDebtForm({ ...debtForm, status: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">قيد السداد (نشط)</SelectItem>
+                      <SelectItem value="paid">تم التسديد بالكامل</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>ملاحظات إضافية</Label>
                 <Textarea 
@@ -135,7 +178,9 @@ export default function DebtsManager() {
               </div>
             </div>
             <DialogFooter>
-              <Button className="w-full" onClick={handleCreateDebt}>حفظ الدين</Button>
+              <Button className="w-full" onClick={handleCreateOrUpdateDebt}>
+                {selectedDebt ? 'تحديث البيانات' : 'حفظ الدين'}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -217,12 +262,15 @@ export default function DebtsManager() {
                         </CardDescription>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <Badge variant={debt.status === 'paid' ? 'secondary' : 'outline'} className={debt.status === 'paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'text-blue-700 border-blue-200'}>
                         {debt.status === 'active' ? 'قيد السداد' : 'تم التسديد بالكامل'}
                       </Badge>
-                      <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteDebt(debt.id)}>
-                        <Trash2 size={18} />
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50" onClick={() => openEditDebt(debt)}>
+                        <Edit size={16} />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteDebt(debt.id)}>
+                        <Trash2 size={16} />
                       </Button>
                     </div>
                   </div>
