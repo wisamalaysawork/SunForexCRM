@@ -5,29 +5,31 @@ export function useAccountingData(month: string) {
   return useQuery({
     queryKey: ['accounting', month],
     queryFn: async () => {
-      const [expRes, payRes, enrollRes, fundedRes, partnerIncomeRes, debtPayRes] = await Promise.all([
+      const [expRes, payRes, enrollRes, fundedRes, partnerIncomeRes, debtPayRes, debtRes] = await Promise.all([
         fetch(`/api/expenses?month=${month}`),
         fetch(`/api/payments?month=${month}`),
         fetch(`/api/enrollments`),
         fetch(`/api/funded-sales`),
         fetch(`/api/partner-incomes?month=${month}`),
-        fetch(`/api/debts/payments?month=${month}`)
+        fetch(`/api/debts/payments?month=${month}`),
+        fetch(`/api/debts`)
       ]);
 
-      if (!expRes.ok || !payRes.ok || !enrollRes.ok || !fundedRes.ok || !partnerIncomeRes.ok || !debtPayRes.ok) {
+      if (!expRes.ok || !payRes.ok || !enrollRes.ok || !fundedRes.ok || !partnerIncomeRes.ok || !debtPayRes.ok || !debtRes.ok) {
         throw new Error('Failed to fetch data');
       }
 
-      const [expenses, payments, allEnrollments, allFundedSales, partnerIncomes, debtPayments] = await Promise.all([
+      const [expenses, payments, allEnrollments, allFundedSales, partnerIncomes, debtPayments, allDebts] = await Promise.all([
         expRes.json(),
         payRes.json(),
         enrollRes.json(),
         fundedRes.json(),
         partnerIncomeRes.json(),
-        debtPayRes.json()
+        debtPayRes.json(),
+        debtRes.json()
       ]);
 
-      // Filter enrollments/funded by month clientside for now as api doesn't support month filtering on get yet
+      // Filter enrollments/funded/debts by month clientside for now as api doesn't support month filtering on get yet
       const monthEnrollments = allEnrollments.filter((e: any) => {
         if (!e.createdAt) return false;
         const d = new Date(e.createdAt);
@@ -40,7 +42,13 @@ export function useAccountingData(month: string) {
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === month;
       });
 
-      return { expenses, payments, monthEnrollments, monthFundedSales, partnerIncomes, debtPayments };
+      const monthDebts = allDebts.filter((d: any) => {
+        if (!d.startDate) return false;
+        const dt = new Date(d.startDate);
+        return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}` === month;
+      });
+
+      return { expenses, payments, monthEnrollments, monthFundedSales, partnerIncomes, debtPayments, monthDebts };
     }
   });
 }

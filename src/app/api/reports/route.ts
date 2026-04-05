@@ -129,10 +129,11 @@ export async function GET(request: NextRequest) {
       .filter(s => s.paymentStatus !== 'cancelled')
       .reduce((sum, s) => sum + (s.accountType?.costPrice || 0), 0)
 
-    const totalExpenses = manualExpenses + fundedCosts + totalDebtRepayments
+    const totalExpenses = manualExpenses + fundedCosts
 
-    // Total income = payments + course enrollments + funded sales + new debts + partner income
-    const totalIncome = totalPayments + totalEnrollmentIncome + totalFundedIncome + totalDebtReceived + totalPartnerIncome
+    // Total income = payments + course enrollments + funded sales + partner income
+    // (Debts received are liabilities, not income)
+    const totalIncome = totalPayments + totalEnrollmentIncome + totalFundedIncome + totalPartnerIncome
 
     const categoryLabels: Record<string, string> = {
       rent: 'إيجارات',
@@ -142,7 +143,6 @@ export async function GET(request: NextRequest) {
       software: 'برمجيات',
       other: 'أخرى',
       funded_cost: 'تكاليف حسابات ممولة',
-      debt_payment: 'سداد ديون',
     }
 
     const expensesByCategory: Record<string, { label: string; items: any[]; total: number }> = {}
@@ -172,21 +172,6 @@ export async function GET(request: NextRequest) {
             date: s.soldAt,
           })),
         total: fundedCosts,
-      }
-    }
-
-    // Add debt repayments as a category
-    if (totalDebtRepayments > 0) {
-      expensesByCategory['debt_payment'] = {
-        label: 'سداد ديون',
-        items: debtPayments.map(p => ({
-          id: `dpay-${p.id}`,
-          category: 'debt_payment',
-          amount: p.amount,
-          description: `سداد دين لـ ${p.debt?.source || 'غير معروف'}`,
-          date: p.date,
-        })),
-        total: totalDebtRepayments,
       }
     }
 

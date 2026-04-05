@@ -55,6 +55,9 @@ export default function AccountingComponent() {
   const payments = data?.payments || []
   const monthEnrollments = data?.monthEnrollments || []
   const monthFundedSales = data?.monthFundedSales || []
+  const partnerIncomes = data?.partnerIncomes || []
+  const debtPayments = data?.debtPayments || []
+  const monthDebts = data?.monthDebts || []
 
   // Income calculations
   const enrollmentIncome = monthEnrollments
@@ -67,14 +70,21 @@ export default function AccountingComponent() {
 
   const manualPaymentsTotal = payments.reduce((sum: number, p: any) => sum + p.amount, 0)
   
-  const totalIncome = manualPaymentsTotal + enrollmentIncome + fundedIncome
+  const partnerIncomeTotal = partnerIncomes.reduce((sum: number, i: any) => sum + i.amount, 0)
+  const debtsReceivedTotal = monthDebts.reduce((sum: number, d: any) => sum + d.amount, 0)
+
+  // Use only true revenue for P&L Income
+  const totalIncome = manualPaymentsTotal + enrollmentIncome + fundedIncome + partnerIncomeTotal
 
   // Expenses calculations
   const manualExpenses = expenses.reduce((sum: number, e: any) => sum + e.amount, 0)
   const fundedCosts = monthFundedSales
     .filter((s: any) => s.paymentStatus !== 'cancelled')
     .reduce((sum: number, s: any) => sum + (s.accountType?.costPrice || 0), 0)
+  
+  const debtRepaymentsTotal = debtPayments.reduce((sum: number, p: any) => sum + p.amount, 0)
 
+  // Use only true operational expenses for P&L Expenses
   const totalExpenses = manualExpenses + fundedCosts
   const netProfit = totalIncome - totalExpenses
 
@@ -85,7 +95,7 @@ export default function AccountingComponent() {
       id: `pay-${p.id}`,
       type: 'income',
       category: 'payment',
-      title: `دفعة من ${p.student?.name || 'طالب'}`,
+      title: p.description || `دفعة من ${p.student?.name || 'طالب'}`,
       amount: p.amount,
       date: new Date(p.date),
       icon: Wallet,
@@ -113,6 +123,28 @@ export default function AccountingComponent() {
       icon: TrendingUp,
       color: 'text-teal-500'
     })),
+    // Income: Partner Incomes
+    ...partnerIncomes.map((i: any) => ({
+      id: `partinc-${i.id}`,
+      type: 'income',
+      category: 'partner',
+      title: i.description || `أرباح شركاء: ${i.partner?.name || ''}`,
+      amount: i.amount,
+      date: new Date(i.date),
+      icon: TrendingUp,
+      color: 'text-blue-500'
+    })),
+    // Income: New Debts
+    ...monthDebts.map((d: any) => ({
+      id: `debtinc-${d.id}`,
+      type: 'income',
+      category: 'debt',
+      title: d.description || `تمويل / دين من ${d.source}`,
+      amount: d.amount,
+      date: new Date(d.startDate),
+      icon: TrendingUp,
+      color: 'text-orange-500'
+    })),
     // Expenses: Manual
     ...expenses.map((e: any) => {
       const cat = CATEGORIES.find(c => c.value === e.category)
@@ -137,6 +169,17 @@ export default function AccountingComponent() {
       date: new Date(s.soldAt),
       icon: DollarSign,
       color: 'text-pink-500'
+    })),
+    // Expenses: Debt Payments
+    ...debtPayments.map((p: any) => ({
+      id: `debtpay-${p.id}`,
+      type: 'expense',
+      category: 'debt_payment',
+      title: p.notes || `سداد دين لـ ${p.debt?.source || ''}`,
+      amount: p.amount,
+      date: new Date(p.date),
+      icon: DollarSign,
+      color: 'text-orange-600'
     }))
   ].sort((a, b) => b.date.getTime() - a.date.getTime())
 
