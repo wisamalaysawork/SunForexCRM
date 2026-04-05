@@ -42,6 +42,7 @@ export const ExpenseSchema = z.object({
   amount: z.number().positive("المبلغ يجب أن يكون أكبر من 0"),
   description: z.string().optional(),
   date: z.string().min(1, "التاريخ مطلوب"),
+  isPaid: z.boolean().default(true).optional(),
 });
 
 export const PaymentSchema = z.object({

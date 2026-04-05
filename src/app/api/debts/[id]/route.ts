@@ -9,7 +9,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await req.json();
-    const { amount, source, description, status, startDate } = body;
+    const { amount, source, description, status, startDate, isCash } = body;
 
     const debt = await db.debt.update({
       where: { id },
@@ -19,6 +19,7 @@ export async function PUT(
         ...(description !== undefined && { description }),
         ...(status && { status }),
         ...(startDate && { startDate: new Date(startDate) }),
+        ...(isCash !== undefined && { isCash }),
       }
     });
 

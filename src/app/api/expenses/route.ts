@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
         description: validated.description,
         date: expenseDate,
         month,
+        isPaid: validated.isPaid ?? true,
       },
     })
 

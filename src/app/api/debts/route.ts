@@ -26,7 +26,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { amount, source, description, startDate } = body;
+    const { amount, source, description, startDate, isCash } = body;
 
     if (!amount || !source) {
       return NextResponse.json({ error: "المبلغ والجهة مطلوبان" }, { status: 400 });
@@ -37,6 +37,7 @@ export async function POST(req: Request) {
         amount: parseFloat(amount),
         source,
         description,
+        isCash: isCash !== undefined ? isCash : true,
         startDate: startDate ? new Date(startDate) : new Date(),
         status: "active"
       }

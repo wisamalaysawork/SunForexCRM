@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useDebts } from '@/hooks/debts/use-debts'
 import { Plus, Wallet, Handshake, Calendar, History, Trash2, CheckCircle2, AlertCircle, TrendingUp, Edit } from 'lucide-react'
+import { Switch } from '@/components/ui/switch'
 import { useToast } from '@/hooks/use-toast'
 
 export default function DebtsManager() {
@@ -30,6 +31,7 @@ export default function DebtsManager() {
     source: '',
     description: '',
     status: 'active',
+    isCash: true,
     startDate: new Date().toISOString().split('T')[0]
   })
 
@@ -62,7 +64,7 @@ export default function DebtsManager() {
       }
       setDebtDialogOpen(false)
       setSelectedDebt(null)
-      setDebtForm({ amount: '', source: '', description: '', status: 'active', startDate: new Date().toISOString().split('T')[0] })
+      setDebtForm({ amount: '', source: '', description: '', status: 'active', isCash: true, startDate: new Date().toISOString().split('T')[0] })
     } catch (e) {
       toast({ title: "خطأ في العملية", variant: "destructive" })
     }
@@ -75,6 +77,7 @@ export default function DebtsManager() {
       source: debt.source,
       description: debt.description || '',
       status: debt.status,
+      isCash: debt.isCash !== false,
       startDate: new Date(debt.startDate).toISOString().split('T')[0]
     })
     setDebtDialogOpen(true)
@@ -117,12 +120,12 @@ export default function DebtsManager() {
 
         <Dialog open={debtDialogOpen} onOpenChange={(open) => {
           setDebtDialogOpen(open)
-          if (!open) { setSelectedDebt(null); setDebtForm({ amount: '', source: '', description: '', status: 'active', startDate: new Date().toISOString().split('T')[0] }) }
+          if (!open) { setSelectedDebt(null); setDebtForm({ amount: '', source: '', description: '', status: 'active', isCash: true, startDate: new Date().toISOString().split('T')[0] }) }
         }}>
           <DialogTrigger asChild>
             <Button className="gap-2 bg-blue-600 hover:bg-blue-700" onClick={() => {
               setSelectedDebt(null)
-              setDebtForm({ amount: '', source: '', description: '', status: 'active', startDate: new Date().toISOString().split('T')[0] })
+              setDebtForm({ amount: '', source: '', description: '', status: 'active', isCash: true, startDate: new Date().toISOString().split('T')[0] })
             }}>
               <Plus size={18} /> إضافة دين جديد
             </Button>
@@ -188,6 +191,11 @@ export default function DebtsManager() {
                   value={debtForm.description}
                   onChange={e => setDebtForm({ ...debtForm, description: e.target.value })}
                 />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label>هل هذا تمويل نقدي استلمناه كاش؟</Label>
+                <Switch checked={debtForm.isCash} onCheckedChange={checked => setDebtForm({ ...debtForm, isCash: checked })} />
               </div>
             </div>
             <DialogFooter>

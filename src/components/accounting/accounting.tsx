@@ -11,13 +11,15 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAccountingData, useExpenseMutations } from '@/hooks/accounting/use-accounting'
+import { useTreasuryData } from '@/hooks/accounting/use-treasury'
 import {
   Plus, Edit, Trash2, TrendingUp, TrendingDown, DollarSign,
   ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight,
   Receipt, Building2, Lightbulb, Users, Megaphone, Monitor,
-  Wallet, GraduationCap
+  Wallet, GraduationCap, Landmark
 } from 'lucide-react'
 
 // ── Constants ──
@@ -43,12 +45,16 @@ export default function AccountingComponent() {
     category: '',
     amount: '',
     description: '',
+    isPaid: true,
     date: new Date().toISOString().split('T')[0]
   })
 
   // ── Queries and Mutations ──
-  const { data, isLoading } = useAccountingData(currentMonth)
+  const { data, isLoading: accountingLoading } = useAccountingData(currentMonth)
   const { createExpense, updateExpense, deleteExpense } = useExpenseMutations(currentMonth)
+  const { data: treasuryData, isLoading: treasuryLoading } = useTreasuryData()
+
+  const isLoading = accountingLoading || treasuryLoading
 
   // ── Derived Data ──
   const expenses = data?.expenses || []
@@ -207,7 +213,7 @@ export default function AccountingComponent() {
   // ── Handlers ──
   const openNewExpenseDialog = () => {
     setEditExpense(null)
-    setForm({ category: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] })
+    setForm({ category: '', amount: '', description: '', isPaid: true, date: new Date().toISOString().split('T')[0] })
     setDialogOpen(true)
   }
 
@@ -217,6 +223,7 @@ export default function AccountingComponent() {
       category: expense.category,
       amount: expense.amount.toString(),
       description: expense.description || '',
+      isPaid: expense.isPaid !== false, // Default to true if undefined
       date: new Date(expense.date).toISOString().split('T')[0]
     })
     setDialogOpen(true)
@@ -282,7 +289,7 @@ export default function AccountingComponent() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {/* Income */}
         <Card className="bg-gradient-to-br from-emerald-50 to-teal-50/30 border-emerald-100">
           <CardContent className="p-6">
@@ -325,6 +332,24 @@ export default function AccountingComponent() {
               </div>
               <div className={`p-3 rounded-xl ${netProfit >= 0 ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
                 <DollarSign className="h-6 w-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Treasury (All Time) */}
+        <Card className="bg-gradient-to-br from-violet-50 to-purple-50/30 border-violet-100 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+          <CardContent className="p-6 relative z-10">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-medium text-violet-600 mb-1">الصندوق (All-Time)</p>
+                <h3 className="text-3xl font-bold text-violet-900">
+                  ${(treasuryData?.balance || 0).toLocaleString()}
+                </h3>
+              </div>
+              <div className="p-3 bg-violet-100 rounded-xl text-violet-600">
+                <Landmark className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
@@ -376,6 +401,11 @@ export default function AccountingComponent() {
                 <div className="space-y-2">
                   <Label>البيان / ملاحظات (اختياري)</Label>
                   <Textarea placeholder="تفاصيل المصروف..." value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label>تم دفعه؟ (مصروف نقدي)</Label>
+                  <Switch checked={form.isPaid} onCheckedChange={checked => setForm({ ...form, isPaid: checked })} />
                 </div>
                 
                 <Button className="w-full" onClick={handleSave} disabled={createExpense.isPending || updateExpense.isPending}>

@@ -99,6 +99,7 @@ model Expense {
   description String?
   date        DateTime
   month       String   // format: "2026-03" for monthly filtering
+  isPaid      Boolean  @default(true) // true = تم الدفع كاش, false = إلتزام مستقبلي غير مدفوع
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   deletedAt   DateTime?
@@ -171,6 +172,7 @@ model Debt {
   source      String   // جهة الدين (اسم الشخص أو البنك)
   description String?  // التفاصيل
   status      String   @default("active") // active, paid
+  isCash      Boolean  @default(true) // true = تمويل نقدي استلمناه, false = دين بضاعة أو خدمة
   startDate   DateTime @default(now())   // تاريخ أخذ الدين
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
