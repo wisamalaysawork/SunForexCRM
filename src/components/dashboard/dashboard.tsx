@@ -46,10 +46,12 @@ interface DashboardData {
       enrollments: number
       fundedSales: number
       partners: number
+      debts: number
       total: number
     }
     expenses: {
       total: number
+      debtRepayments?: number
       byCategory: Array<{ category: string; _sum: { amount: number }; _count: number }>
     }
     profit: number
@@ -155,7 +157,7 @@ function renderCustomLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent
   const y = cy + radius * Math.sin(-midAngle * RADIAN)
   return (
     <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600}>
-      {`${(percent * 100).toFixed(0)}%`}
+      {`${(percent * 100 || 0).toFixed(0)}%`}
     </text>
   )
 }
@@ -320,7 +322,7 @@ export function Dashboard() {
     .map(([key, val]) => ({
       name: categoryLabels[key] || key,
       value: Math.round(val),
-      percent: data.financials.expenses.total > 0 ? ((val / data.financials.expenses.total) * 100).toFixed(1) : '0',
+      percent: data.financials.expenses.total > 0 ? (((val || 0) / data.financials.expenses.total) * 100).toFixed(1) : '0',
     }))
 
   // Quick action buttons
@@ -379,7 +381,7 @@ export function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">إجمالي الواردات</p>
-                <p className="text-3xl font-bold tracking-tight text-emerald-600">${data.financials.income.total.toFixed(0)}</p>
+                <p className="text-3xl font-bold tracking-tight text-emerald-600">${(data.financials.income.total || 0).toFixed(0)}</p>
                 <div className="flex items-center gap-1.5 mt-1">
                   <ArrowUpRight size={12} className="text-emerald-600" />
                   <p className="text-xs text-muted-foreground font-medium">إجمالي الإيرادات في المشروع</p>
@@ -405,7 +407,7 @@ export function Dashboard() {
                 <p className="text-3xl font-bold tracking-tight">{data.fundedAccounts.totalSales}</p>
                 <div className="flex items-center gap-1.5 mt-1">
                   <ArrowUpRight size={12} className="text-green-600" />
-                  <p className="text-xs text-green-600 font-medium">ربح ${(data.financials.income.fundedSales).toFixed(0)}</p>
+                  <p className="text-xs text-green-600 font-medium">ربح ${(data.financials.income.fundedSales || 0).toFixed(0)}</p>
                 </div>
               </div>
               <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-950 transition-colors">
@@ -426,7 +428,7 @@ export function Dashboard() {
               <div>
                 <p className="text-sm text-muted-foreground mb-1">صافي الربح الكلي</p>
                 <p className={`text-3xl font-bold tracking-tight ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                  ${Math.abs(data.financials.profit).toFixed(0)}
+                  ${Math.abs(data.financials.profit || 0).toFixed(0)}
                 </p>
                 <div className="flex items-center gap-1.5 mt-1">
                   {isPositive ? (
@@ -608,12 +610,13 @@ export function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-green-600">${data.financials.income.total.toFixed(0)}</p>
+            <p className="text-2xl font-bold text-green-600">${(data.financials.income.total || 0).toFixed(0)}</p>
             <div className="text-xs text-muted-foreground mt-2 space-y-1">
-              <p>الدورات: ${data.financials.income.enrollments.toFixed(0)}</p>
-              <p>الحسابات الممولة: ${data.financials.income.fundedSales.toFixed(0)}</p>
-              <p>شراكات/عمولات إضافية: ${data.financials.income.partners.toFixed(0)}</p>
-              {data.financials.income.payments > 0 && <p>مدفوعات متنوعة: ${data.financials.income.payments.toFixed(0)}</p>}
+              <p>الدورات: ${(data.financials.income.enrollments || 0).toFixed(0)}</p>
+              <p>الحسابات الممولة: ${(data.financials.income.fundedSales || 0).toFixed(0)}</p>
+              {(data.financials.income.partners || 0) > 0 && <p>شراكات/عمولات إضافية: ${(data.financials.income.partners || 0).toFixed(0)}</p>}
+              {(data.financials.income.debts || 0) > 0 && <p>ديون واردة: ${(data.financials.income.debts || 0).toFixed(0)}</p>}
+              {(data.financials.income.payments || 0) > 0 && <p>مدفوعات متنوعة: ${(data.financials.income.payments || 0).toFixed(0)}</p>}
             </div>
           </CardContent>
         </Card>
@@ -626,11 +629,14 @@ export function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-red-600">${data.financials.expenses.total.toFixed(0)}</p>
+            <p className="text-2xl font-bold text-red-600">${(data.financials.expenses.total || 0).toFixed(0)}</p>
             <div className="text-xs text-muted-foreground mt-2 space-y-1">
               {pieData.map((d: any) => (
                 <p key={d.name}>{d.name}: ${d.value}</p>
               ))}
+              {(data.financials.expenses.debtRepayments || 0) > 0 && (
+                <p>سداد ديون: ${(data.financials.expenses.debtRepayments || 0).toFixed(0)}</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -643,11 +649,11 @@ export function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">${(data.financials.income.fundedSales).toFixed(0)}</p>
+            <p className="text-2xl font-bold">${(data.financials.income.fundedSales || 0).toFixed(0)}</p>
             <div className="text-xs text-muted-foreground mt-2 space-y-1">
               <p>{data.fundedAccounts.paidSales} حساب مدفوع من {data.fundedAccounts.totalSales}</p>
               {(data.fundedAccounts?.accountTypes || []).map((at: any) => (
-                <p key={at.id}>{at.name}: {at._count.sales} مبيعات (ربح الوحدة: ${(at.sellingPrice - at.costPrice).toFixed(0)})</p>
+                <p key={at.id}>{at.name}: {at._count.sales} مبيعات (ربح الوحدة: ${((at.sellingPrice || 0) - (at.costPrice || 0)).toFixed(0)})</p>
               ))}
             </div>
           </CardContent>

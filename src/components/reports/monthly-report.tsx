@@ -133,7 +133,10 @@ export function MonthlyReport() {
   const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))
   const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))
 
-  const formatCurrency = (val: number) => `$${val.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`
+  const formatCurrency = (val: number | undefined | null) => {
+    const safeVal = val || 0
+    return `$${safeVal.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`
+  }
   const formatDate = (dateStr: string) => {
     try {
       return new Date(dateStr).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })

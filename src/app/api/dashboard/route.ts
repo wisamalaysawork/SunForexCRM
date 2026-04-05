@@ -103,6 +103,22 @@ export async function GET(request: NextRequest) {
     })
 
 
+    // ============ Partner Income & Debts ============
+    const partnerIncome = await db.partnerIncome.aggregate({
+      where: month ? { ...baseWhere, month } : baseWhere,
+      _sum: { amount: true },
+    })
+
+    const debtReceived = await db.debt.aggregate({
+      where: month ? { ...baseWhere, startDate: { gte: startDate, lt: endDate } } : baseWhere,
+      _sum: { amount: true },
+    })
+
+    const debtRepayments = await db.debtPayment.aggregate({
+      where: month ? { ...baseWhere, date: { gte: startDate, lt: endDate } } : baseWhere,
+      _sum: { amount: true },
+    })
+
     const recentStudents = await db.student.findMany({
       where: baseWhere,
       orderBy: { createdAt: 'desc' },
@@ -132,8 +148,11 @@ export async function GET(request: NextRequest) {
     const totalIncome =
       (totalRevenue._sum.amount || 0) +
       (enrollmentRevenue._sum.amountPaid || 0) +
-      (fundedSalesRevenue._sum.amountPaid || 0)
-    const expenses = (totalExpenses._sum.amount || 0) + fundedCosts
+      (fundedSalesRevenue._sum.amountPaid || 0) +
+      (partnerIncome._sum.amount || 0) +
+      (debtReceived._sum.amount || 0)
+
+    const expenses = (totalExpenses._sum.amount || 0) + fundedCosts + (debtRepayments._sum.amount || 0)
     const profit = totalIncome - expenses
 
     return NextResponse.json({
@@ -164,10 +183,13 @@ export async function GET(request: NextRequest) {
           payments: totalRevenue._sum.amount || 0,
           enrollments: enrollmentRevenue._sum.amountPaid || 0,
           fundedSales: fundedSalesRevenue._sum.amountPaid || 0,
+          partners: partnerIncome._sum.amount || 0,
+          debts: debtReceived._sum.amount || 0,
           total: totalIncome,
         },
         expenses: {
           total: expenses,
+          debtRepayments: debtRepayments._sum.amount || 0,
           byCategory: expensesByCategory,
         },
         profit,
