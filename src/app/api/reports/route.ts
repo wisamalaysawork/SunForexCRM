@@ -177,6 +177,21 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Add debt repayments as a category (for detail breakdown, not for P&L totalExpenses)
+    if (totalDebtRepayments > 0) {
+      expensesByCategory['debt_payment'] = {
+        label: 'سداد ديون',
+        items: debtPayments.map(p => ({
+          id: `dpay-${p.id}`,
+          category: 'debt_payment',
+          amount: p.amount,
+          description: `سداد لـ: ${p.debt?.source || 'دين'} - ${p.notes || ''}`,
+          date: p.date,
+        })),
+        total: totalDebtRepayments,
+      }
+    }
+
     // Net profit
     const netProfit = totalIncome - totalExpenses
 

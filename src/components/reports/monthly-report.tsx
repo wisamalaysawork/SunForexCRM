@@ -338,7 +338,14 @@ export function MonthlyReport() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-red-600">{formatCurrency(data.totals.totalExpenses)}</p>
-            <p className="text-xs text-muted-foreground mt-1">{data.expenses.length} مصروف</p>
+            <div className="flex flex-col gap-1 mt-1 text-xs text-muted-foreground">
+              <span>{data.expenses.length} مصروف تشغيلي</span>
+              {(data.totals.totalDebtRepayments || 0) > 0 && (
+                <span className="font-medium text-orange-600">
+                  + {formatCurrency(data.totals.totalDebtRepayments)} (سداد ديون)
+                </span>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -639,6 +646,12 @@ export function MonthlyReport() {
                 <span>إجمالي المصاريف</span>
                 <span>{formatCurrency(data.totals.totalExpenses)}</span>
               </div>
+              {(data.totals.totalDebtRepayments || 0) > 0 && (
+                <div className="flex justify-between items-center text-sm font-medium text-orange-700 dark:text-orange-400">
+                  <span>سداد ديون (خارج من الكاش)</span>
+                  <span>{formatCurrency(data.totals.totalDebtRepayments || 0)}</span>
+                </div>
+              )}
             </div>
 
             {/* Net Profit/Loss */}
