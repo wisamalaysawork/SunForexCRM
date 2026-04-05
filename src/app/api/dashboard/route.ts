@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     const enrollmentRevenue = await db.courseEnrollment.aggregate({
       where: {
         ...baseWhere,
-        paymentStatus: { not: 'cancelled' },
+        paymentStatus: { in: ['paid', 'partial'] },
         ...(month && { createdAt: { gte: startDate, lt: endDate } }),
       },
       _sum: { amountPaid: true },
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
     const fundedSalesRevenue = await db.fundedAccountSale.aggregate({
       where: {
         ...baseWhere,
-        paymentStatus: { not: 'cancelled' },
+        paymentStatus: { in: ['paid', 'partial'] },
         ...(month && { soldAt: { gte: startDate, lt: endDate } }),
       },
       _sum: { amountPaid: true },
@@ -101,7 +101,6 @@ export async function GET(request: NextRequest) {
       _sum: { amount: true },
       _count: true,
     })
-
 
     // ============ Partner Income & Debts ============
     const partnerIncome = await db.partnerIncome.aggregate({
