@@ -7,16 +7,17 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const month = searchParams.get('month') // format: "2026-03"
 
-    const baseWhere = { deletedAt: null }
-    
-    // Calculate date range if month is provided
-    let startDate: Date | null = null
-    let endDate: Date | null = null
+    let startDate: Date | undefined
+    let endDate: Date | undefined
     if (month) {
-      const [year, m] = month.split('-').map(Number)
-      startDate = new Date(year, m - 1, 1)
-      endDate = new Date(year, m, 1) // First day of next month
+      const [yearStr, monthStr] = month.split('-')
+      const yearInt = parseInt(yearStr, 10)
+      const monthInt = parseInt(monthStr, 10)
+      startDate = new Date(yearInt, monthInt - 1, 1)
+      endDate = new Date(yearInt, monthInt, 1)
     }
+
+    const baseWhere = { deletedAt: null }
 
     // ============ Students Metrics ============
     const totalStudents = await db.student.count({ where: baseWhere })
@@ -59,13 +60,8 @@ export async function GET(request: NextRequest) {
     const enrollmentRevenue = await db.courseEnrollment.aggregate({
       where: {
         ...baseWhere,
-        paymentStatus: 'paid',
-        ...(month && { 
-          createdAt: { 
-            gte: startDate!, 
-            lt: endDate! 
-          } 
-        }),
+        paymentStatus: { not: 'cancelled' },
+        ...(month && { createdAt: { gte: startDate, lt: endDate } }),
       },
       _sum: { amountPaid: true },
     })
@@ -73,21 +69,25 @@ export async function GET(request: NextRequest) {
     const fundedSalesRevenue = await db.fundedAccountSale.aggregate({
       where: {
         ...baseWhere,
-        paymentStatus: 'paid',
-        ...(month && { 
-          createdAt: { 
-            gte: startDate!, 
-            lt: endDate! 
-          } 
-        }),
+        paymentStatus: { not: 'cancelled' },
+        ...(month && { soldAt: { gte: startDate, lt: endDate } }),
       },
       _sum: { amountPaid: true },
     })
 
-    const partnerIncome = await db.partnerIncome.aggregate({
-      where: month ? { ...baseWhere, month } : baseWhere,
-      _sum: { amount: true },
+    const fundedSalesCostArray = await db.fundedAccountSale.findMany({
+      where: {
+        ...baseWhere,
+        paymentStatus: { not: 'cancelled' },
+        ...(month && { soldAt: { gte: startDate, lt: endDate } }),
+      },
+      select: {
+        accountType: {
+          select: { costPrice: true }
+        }
+      }
     })
+    const fundedCosts = fundedSalesCostArray.reduce((sum, sale) => sum + (sale.accountType?.costPrice || 0), 0)
 
     // ============ Expenses Metrics ============
     const totalExpenses = await db.expense.aggregate({
@@ -101,39 +101,6 @@ export async function GET(request: NextRequest) {
       _sum: { amount: true },
       _count: true,
     })
-
-    const debtPayments = await db.debtPayment.aggregate({
-      where: {
-        ...baseWhere,
-        ...(month && { 
-          date: { 
-            gte: startDate!, 
-            lt: endDate! 
-          } 
-        }),
-      },
-      _sum: { amount: true },
-    })
-
-    // ============ Funded Costs (Cost Price) ============
-    const monthFundedSalesData = await db.fundedAccountSale.findMany({
-      where: {
-        ...baseWhere,
-        paymentStatus: { not: 'cancelled' },
-        ...(month && { 
-          createdAt: { 
-            gte: startDate!, 
-            lt: endDate! 
-          } 
-        }),
-      },
-      select: {
-        accountType: {
-          select: { costPrice: true }
-        }
-      }
-    })
-    const fundedCosts = monthFundedSalesData.reduce((sum, s) => sum + (s.accountType?.costPrice || 0), 0)
 
 
     const recentStudents = await db.student.findMany({
@@ -165,12 +132,9 @@ export async function GET(request: NextRequest) {
     const totalIncome =
       (totalRevenue._sum.amount || 0) +
       (enrollmentRevenue._sum.amountPaid || 0) +
-      (fundedSalesRevenue._sum.amountPaid || 0) +
-      (partnerIncome._sum.amount || 0)
-    const manualExpenses = totalExpenses._sum.amount || 0
-    const debtRepayments = debtPayments._sum.amount || 0
-    const totalExpensesWithCosts = manualExpenses + fundedCosts + debtRepayments
-    const profit = totalIncome - totalExpensesWithCosts
+      (fundedSalesRevenue._sum.amountPaid || 0)
+    const expenses = (totalExpenses._sum.amount || 0) + fundedCosts
+    const profit = totalIncome - expenses
 
     return NextResponse.json({
       period: month || 'all-time',
@@ -200,27 +164,11 @@ export async function GET(request: NextRequest) {
           payments: totalRevenue._sum.amount || 0,
           enrollments: enrollmentRevenue._sum.amountPaid || 0,
           fundedSales: fundedSalesRevenue._sum.amountPaid || 0,
-          partners: partnerIncome._sum.amount || 0,
           total: totalIncome,
         },
         expenses: {
-          total: totalExpensesWithCosts,
-          manual: manualExpenses,
-          fundedCosts: fundedCosts,
-          debtRepayments: debtRepayments,
-          byCategory: [
-            ...expensesByCategory,
-            ...(fundedCosts > 0 ? [{ 
-              category: 'funded_cost', 
-              _sum: { amount: fundedCosts },
-              _count: monthFundedSalesData.length 
-            }] : []),
-            ...(debtRepayments > 0 ? [{ 
-              category: 'debt_payment', 
-              _sum: { amount: debtRepayments },
-              _count: 0 
-            }] : [])
-          ],
+          total: expenses,
+          byCategory: expensesByCategory,
         },
         profit,
       },

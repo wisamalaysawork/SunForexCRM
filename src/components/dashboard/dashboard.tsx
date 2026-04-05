@@ -264,11 +264,10 @@ export function Dashboard() {
 
   const isLoading = mainReady !== refreshKey || chartsReady !== refreshKey
 
-  // Fetch main dashboard data (current month)
+  // Fetch main dashboard data (all time)
   useEffect(() => {
     const key = refreshKey
-    const currentMonth = getMonthString(new Date())
-    fetch(`/api/dashboard?month=${currentMonth}`)
+    fetch(`/api/dashboard`)
       .then(res => res.json())
       .then(d => {
         setData(d)
@@ -340,7 +339,7 @@ export function Dashboard() {
           <p className="text-muted-foreground">نظرة عامة على أداء المكتب</p>
         </div>
         <div className="bg-primary/10 text-primary px-4 py-1.5 rounded-full w-fit">
-          <span className="text-sm font-semibold">إحصائيات شهر {formatMonthLabel(getMonthString(new Date()))}</span>
+          <span className="text-sm font-semibold">الإحصائيات الكلية (منذ البداية)</span>
         </div>
       </div>
 
@@ -383,7 +382,7 @@ export function Dashboard() {
                 <p className="text-3xl font-bold tracking-tight text-emerald-600">${data.financials.income.total.toFixed(0)}</p>
                 <div className="flex items-center gap-1.5 mt-1">
                   <ArrowUpRight size={12} className="text-emerald-600" />
-                  <p className="text-xs text-muted-foreground font-medium">الواردات الكلية لهذا الشهر</p>
+                  <p className="text-xs text-muted-foreground font-medium">إجمالي الإيرادات في المشروع</p>
                 </div>
               </div>
               <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-950 transition-colors">
@@ -425,7 +424,7 @@ export function Dashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">صافي الشهر</p>
+                <p className="text-sm text-muted-foreground mb-1">صافي الربح الكلي</p>
                 <p className={`text-3xl font-bold tracking-tight ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
                   ${Math.abs(data.financials.profit).toFixed(0)}
                 </p>
@@ -520,14 +519,14 @@ export function Dashboard() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <PieChartIcon size={18} className="text-muted-foreground" />
-              <CardTitle className="text-base">توزيع المصاريف</CardTitle>
+              <CardTitle className="text-base">توزيع المصاريف الكلية</CardTitle>
             </div>
-            <CardDescription>حسب الفئة - الشهر الحالي</CardDescription>
+            <CardDescription>حسب الفئة - منذ بداية المشروع</CardDescription>
           </CardHeader>
           <CardContent>
             {pieData.length === 0 ? (
               <div className="h-72 flex items-center justify-center">
-                <p className="text-sm text-muted-foreground">لا توجد مصاريف هذا الشهر</p>
+                <p className="text-sm text-muted-foreground">لا توجد مصاريف</p>
               </div>
             ) : (
               <>
@@ -623,7 +622,7 @@ export function Dashboard() {
         <Card className="hover:shadow-xl transition-shadow rounded-2xl border-border/50 bg-card/80 backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 fill-mode-both" style={{ animationDelay: '900ms' }}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <ArrowDownRight size={16} className="text-red-500" /> إجمالي المصاريف (الشهر)
+              <ArrowDownRight size={16} className="text-red-500" /> إجمالي المصاريف الكلية
             </CardTitle>
           </CardHeader>
           <CardContent>

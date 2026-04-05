@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -17,7 +17,7 @@ import {
   Plus, Edit, Trash2, TrendingUp, TrendingDown, DollarSign,
   ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight,
   Receipt, Building2, Lightbulb, Users, Megaphone, Monitor,
-  Wallet, GraduationCap, Handshake
+  Wallet, GraduationCap
 } from 'lucide-react'
 
 // ── Constants ──
@@ -55,8 +55,6 @@ export default function AccountingComponent() {
   const payments = data?.payments || []
   const monthEnrollments = data?.monthEnrollments || []
   const monthFundedSales = data?.monthFundedSales || []
-  const partnerIncomes = data?.partnerIncomes || []
-  const debtPayments = data?.debtPayments || []
 
   // Income calculations
   const enrollmentIncome = monthEnrollments
@@ -68,19 +66,16 @@ export default function AccountingComponent() {
     .reduce((sum: number, s: any) => sum + s.amountPaid, 0)
 
   const manualPaymentsTotal = payments.reduce((sum: number, p: any) => sum + p.amount, 0)
-  const partnerTotal = partnerIncomes.reduce((sum: number, p: any) => sum + p.amount, 0)
   
-  const totalIncome = manualPaymentsTotal + enrollmentIncome + fundedIncome + partnerTotal
+  const totalIncome = manualPaymentsTotal + enrollmentIncome + fundedIncome
 
   // Expenses calculations
   const manualExpenses = expenses.reduce((sum: number, e: any) => sum + e.amount, 0)
   const fundedCosts = monthFundedSales
     .filter((s: any) => s.paymentStatus !== 'cancelled')
     .reduce((sum: number, s: any) => sum + (s.accountType?.costPrice || 0), 0)
-  
-  const debtRepayments = debtPayments.reduce((sum: number, p: any) => sum + p.amount, 0)
 
-  const totalExpenses = manualExpenses + fundedCosts + debtRepayments
+  const totalExpenses = manualExpenses + fundedCosts
   const netProfit = totalIncome - totalExpenses
 
   // Transaction history compilation
@@ -118,17 +113,6 @@ export default function AccountingComponent() {
       icon: TrendingUp,
       color: 'text-teal-500'
     })),
-    // Income: Partners
-    ...partnerIncomes.map((p: any) => ({
-      id: `part-${p.id}`,
-      type: 'income',
-      category: 'partner',
-      title: `عمولة من الشريك: ${p.partner?.name || 'غير معروف'}`,
-      amount: p.amount,
-      date: new Date(p.date),
-      icon: Handshake,
-      color: 'text-lime-500'
-    })),
     // Expenses: Manual
     ...expenses.map((e: any) => {
       const cat = CATEGORIES.find(c => c.value === e.category)
@@ -153,17 +137,6 @@ export default function AccountingComponent() {
       date: new Date(s.soldAt),
       icon: DollarSign,
       color: 'text-pink-500'
-    })),
-    // Expenses: Debt Repayments
-    ...debtPayments.map((p: any) => ({
-      id: `debt-${p.id}`,
-      type: 'expense',
-      category: 'debt_payment',
-      title: `سداد دين: ${p.debt?.source || 'قرض'}`,
-      amount: p.amount,
-      date: new Date(p.date),
-      icon: Handshake,
-      color: 'text-blue-500'
     }))
   ].sort((a, b) => b.date.getTime() - a.date.getTime())
 
@@ -266,9 +239,9 @@ export default function AccountingComponent() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Income */}
-        <Card className="bg-gradient-to-br from-emerald-50 to-teal-50/30 border-emerald-100 shadow-sm">
+        <Card className="bg-gradient-to-br from-emerald-50 to-teal-50/30 border-emerald-100">
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div>
@@ -283,46 +256,31 @@ export default function AccountingComponent() {
         </Card>
 
         {/* Expenses */}
-        <Card className="bg-gradient-to-br from-rose-50 to-red-50/30 border-rose-100 shadow-sm">
+        <Card className="bg-gradient-to-br from-rose-50 to-red-50/30 border-rose-100">
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm font-medium text-rose-600 mb-1">المصاريف التشغيلية</p>
-                <h3 className="text-3xl font-bold text-rose-900">${manualExpenses.toLocaleString()}</h3>
+                <p className="text-sm font-medium text-rose-600 mb-1">إجمالي المصروفات</p>
+                <h3 className="text-3xl font-bold text-rose-900">${totalExpenses.toLocaleString()}</h3>
               </div>
               <div className="p-3 bg-rose-100 rounded-xl text-rose-600">
-                <TrendingDown className="h-6 w-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Debt Repayments */}
-        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50/30 border-blue-100 shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm font-medium text-blue-600 mb-1">سداد ديون</p>
-                <h3 className="text-3xl font-bold text-blue-900">${debtRepayments.toLocaleString()}</h3>
-              </div>
-              <div className="p-3 bg-blue-100 rounded-xl text-blue-600">
-                <Handshake className="h-6 w-6" />
+                <ArrowDownRight className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Net */}
-        <Card className={netProfit >= 0 ? "bg-gradient-to-br from-emerald-50 to-emerald-100/30 border-emerald-200 shadow-sm" : "bg-gradient-to-br from-orange-50 to-red-50/30 border-orange-100 shadow-sm"}>
+        <Card className={netProfit >= 0 ? "bg-gradient-to-br from-blue-50 to-indigo-50/30 border-blue-100" : "bg-gradient-to-br from-orange-50 to-red-50/30 border-orange-100"}>
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div>
-                <p className={`text-sm font-medium mb-1 ${netProfit >= 0 ? 'text-emerald-700' : 'text-orange-600'}`}>صافي الربح</p>
-                <h3 className={`text-3xl font-bold ${netProfit >= 0 ? 'text-emerald-900' : 'text-orange-900'}`}>
+                <p className={`text-sm font-medium mb-1 ${netProfit >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>صافي الربح</p>
+                <h3 className={`text-3xl font-bold ${netProfit >= 0 ? 'text-blue-900' : 'text-orange-900'}`}>
                   ${netProfit.toLocaleString()}
                 </h3>
               </div>
-              <div className={`p-3 rounded-xl ${netProfit >= 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-orange-100 text-orange-600'}`}>
+              <div className={`p-3 rounded-xl ${netProfit >= 0 ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
                 <DollarSign className="h-6 w-6" />
               </div>
             </div>
@@ -346,26 +304,17 @@ export default function AccountingComponent() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>{editExpense ? 'تعديل المصروف' : 'إضافة مصروف جديد'}</DialogTitle>
-                <DialogDescription>
-                  {editExpense ? 'قم بتعديل بيانات المصروف الحالي هنا.' : 'أدخل بيانات المصروف الجديد لتسجيله في النظام.'}
-                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="expense-date">تاريخ المصروف</Label>
-                  <Input 
-                    id="expense-date"
-                    name="date"
-                    type="date" 
-                    value={form.date} 
-                    onChange={e => setForm({ ...form, date: e.target.value })} 
-                  />
+                  <Label>تاريخ المصروف</Label>
+                  <Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="expense-category">التصنيف</Label>
+                  <Label>التصنيف</Label>
                   <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
-                    <SelectTrigger id="expense-category"><SelectValue placeholder="اختر التصنيف..." /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="اختر التصنيف..." /></SelectTrigger>
                     <SelectContent>
                       {CATEGORIES.map(c => (
                         <SelectItem key={c.value} value={c.value}>
@@ -377,28 +326,13 @@ export default function AccountingComponent() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expense-amount">المبلغ ($)</Label>
-                  <Input 
-                    id="expense-amount"
-                    name="amount"
-                    type="number" 
-                    min="0" 
-                    step="0.01" 
-                    placeholder="0.00" 
-                    value={form.amount} 
-                    onChange={e => setForm({ ...form, amount: e.target.value })} 
-                  />
+                  <Label>المبلغ ($)</Label>
+                  <Input type="number" min="0" step="0.01" placeholder="0.00" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="expense-description">البيان / ملاحظات (اختياري)</Label>
-                  <Textarea 
-                    id="expense-description"
-                    name="description"
-                    placeholder="تفاصيل المصروف..." 
-                    value={form.description} 
-                    onChange={e => setForm({ ...form, description: e.target.value })} 
-                  />
+                  <Label>البيان / ملاحظات (اختياري)</Label>
+                  <Textarea placeholder="تفاصيل المصروف..." value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
                 </div>
                 
                 <Button className="w-full" onClick={handleSave} disabled={createExpense.isPending || updateExpense.isPending}>
