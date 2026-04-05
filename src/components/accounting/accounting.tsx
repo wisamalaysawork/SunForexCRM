@@ -19,7 +19,7 @@ import {
   Plus, Edit, Trash2, TrendingUp, TrendingDown, DollarSign,
   ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight,
   Receipt, Building2, Lightbulb, Users, Megaphone, Monitor,
-  Wallet, GraduationCap, Landmark
+  Wallet, GraduationCap, Landmark, Search, X
 } from 'lucide-react'
 
 // ── Constants ──
@@ -40,6 +40,11 @@ export default function AccountingComponent() {
   const [activeTab, setActiveTab] = useState('overview')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editExpense, setEditExpense] = useState<any>(null)
+  
+  // Filtering state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterCategory, setFilterCategory] = useState('all')
+  const [filterType, setFilterType] = useState('all') // 'all', 'income', 'expense'
   
   const [form, setForm] = useState({
     category: '',
@@ -188,6 +193,26 @@ export default function AccountingComponent() {
       color: 'text-orange-600'
     }))
   ].sort((a, b) => b.date.getTime() - a.date.getTime())
+
+  // ── Filtering Logic ──
+  const filteredTransactions = transactions.filter(t => {
+    const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesCategory = filterCategory === 'all' || t.category === filterCategory
+    const matchesType = filterType === 'all' || t.type === filterType
+    return matchesSearch && matchesCategory && matchesType
+  })
+
+  const filteredExpenses = expenses.filter((e: any) => {
+    const matchesSearch = (e.description || '').toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesCategory = filterCategory === 'all' || e.category === filterCategory
+    return matchesSearch && matchesCategory
+  }).sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+  // Summary of filtered results
+  const filteredCount = activeTab === 'overview' ? filteredTransactions.length : filteredExpenses.length
+  const filteredSum = activeTab === 'overview' 
+    ? filteredTransactions.reduce((sum, t) => sum + (t.type === 'income' ? t.amount : -t.amount), 0)
+    : filteredExpenses.reduce((sum: number, e: any) => sum + e.amount, 0)
 
   // Categories Aggregation
   const categoryTotals: Record<string, { label: string, color: string, amount: number }> = {}
@@ -362,7 +387,6 @@ export default function AccountingComponent() {
             <TabsTrigger value="overview">سجل الحركات</TabsTrigger>
             <TabsTrigger value="expenses">المصروفات التفصيلية</TabsTrigger>
           </TabsList>
-          
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={openNewExpenseDialog} className="gap-2">
@@ -416,15 +440,97 @@ export default function AccountingComponent() {
           </Dialog>
         </div>
 
+        {/* Filter Bar & Summary */}
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+            <div className="md:col-span-5 relative">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="بحث في البيان أو الاسم..." 
+                className="pr-10"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute left-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                  onClick={() => setSearchQuery('')}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+
+            <div className="md:col-span-3">
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger><SelectValue placeholder="نوع الحركة..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع الحركات</SelectItem>
+                  <SelectItem value="income">الواردات فقط (+)</SelectItem>
+                  <SelectItem value="expense">المصروفات فقط (-)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="md:col-span-3">
+              <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <SelectTrigger><SelectValue placeholder="التصنيف..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع التصنيفات</SelectItem>
+                  {CATEGORIES.map(c => (
+                    <SelectItem key={c.value} value={c.value}>{c.emoji} {c.label}</SelectItem>
+                  ))}
+                  <SelectItem value="payment">💳 دفعات طلاب</SelectItem>
+                  <SelectItem value="enrollment">🎓 تسجيلات</SelectItem>
+                  <SelectItem value="funded">💰 حسابات ممولة</SelectItem>
+                  <SelectItem value="funded_cost">🔌 تكاليف شراء</SelectItem>
+                  <SelectItem value="partner">🤝 أرباح شركاء</SelectItem>
+                  <SelectItem value="debt">🟠 تمويل / ديون</SelectItem>
+                  <SelectItem value="debt_payment">🟠 سداد ديون</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="md:col-span-1">
+              <Button 
+                variant="outline" 
+                className="w-full h-10 px-2" 
+                onClick={() => { setSearchQuery(''); setFilterCategory('all'); setFilterType('all'); }}
+                title="مسح الفلاتر"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-6 px-4 py-3 bg-slate-50 border rounded-lg text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">عدد الحركات:</span>
+              <Badge variant="secondary" className="text-sm font-semibold">{filteredCount}</Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">إجمالي المبلغ:</span>
+              <span className={`text-base font-bold ${filteredSum >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                ${Math.abs(filteredSum).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                {filteredSum < 0 && <span className="text-xs mr-1 opacity-70">(صادر)</span>}
+                {filteredSum > 0 && <span className="text-xs mr-1 opacity-70">(وارد)</span>}
+              </span>
+            </div>
+          </div>
+        </div>
+
+
         <TabsContent value="overview" className="m-0">
           <Card>
-            <CardHeader><CardTitle>الحركات المالية للشهر ({transactions.length})</CardTitle></CardHeader>
+            <CardHeader><CardTitle>الحركات المالية للشهر ({filteredCount})</CardTitle></CardHeader>
             <CardContent>
-              {transactions.length === 0 ? (
-                <div className="text-center py-10 text-muted-foreground">لا توجد حركات مسجلة هذا الشهر</div>
+              {filteredTransactions.length === 0 ? (
+                <div className="text-center py-10 text-muted-foreground">لا توجد حركات تطابق البحث أو الفلاتر</div>
               ) : (
                 <div className="space-y-4">
-                  {transactions.map(t => (
+                  {filteredTransactions.map(t => (
                     <div key={t.id} className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 transition-colors">
                       <div className="flex items-center gap-4">
                         <div className={`p-3 rounded-full bg-opacity-10 ${t.type === 'income' ? 'bg-emerald-500 text-emerald-600' : 'bg-rose-500 text-rose-600'}`}>
@@ -464,7 +570,7 @@ export default function AccountingComponent() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {expenses.map((expense: any) => {
+                  {filteredExpenses.map((expense: any) => {
                     const cat = CATEGORIES.find(c => c.value === expense.category)
                     return (
                       <TableRow key={expense.id}>
@@ -489,8 +595,8 @@ export default function AccountingComponent() {
                       </TableRow>
                     )
                   })}
-                  {expenses.length === 0 && (
-                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">لا توجد مصروفات يدوية مسجلة</TableCell></TableRow>
+                  {filteredExpenses.length === 0 && (
+                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">لا توجد مصروفات تطابق البحث</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
