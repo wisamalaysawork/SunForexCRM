@@ -120,7 +120,9 @@ export async function GET(request: NextRequest) {
     const manualExpenses = expenses.reduce((sum, e) => sum + e.amount, 0)
 
     // Debt and Partner Income
-    const totalDebtReceived = newDebts.reduce((sum, d) => sum + d.amount, 0)
+    const totalDebtReceived = newDebts
+      .filter(d => d.isCash) // Only cash funding adds to cash inflow
+      .reduce((sum, d) => sum + d.amount, 0)
     const totalDebtRepayments = debtPayments.reduce((sum, p) => sum + p.amount, 0)
     const totalPartnerIncome = partnerIncomes.reduce((sum, i) => sum + i.amount, 0)
 

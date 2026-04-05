@@ -454,14 +454,19 @@ export function MonthlyReport() {
                   <TableRow key={`debt-${d.id}`}>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <TrendingUp size={14} className="text-orange-500" />
-                        <Badge variant="outline" className="text-xs font-normal">تمويل / دين</Badge>
+                        {d.isCash ? <TrendingUp size={14} className="text-orange-500" /> : <Receipt size={14} className="text-blue-500" />}
+                        <Badge variant="outline" className={`text-xs font-normal ${d.isCash ? 'border-orange-200 bg-orange-50 text-orange-700' : 'border-blue-200 bg-blue-50 text-blue-700'}`}>
+                          {d.isCash ? 'تمويل نقدي' : 'دين بضاعة/خدمة'}
+                        </Badge>
                       </div>
                     </TableCell>
                     <TableCell className="text-sm">{d.description || 'أخذ دين جديد'}</TableCell>
                     <TableCell className="text-sm">{d.source}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{formatDate(d.startDate)}</TableCell>
-                    <TableCell className="text-left font-medium text-green-600">{formatCurrency(d.amount)}</TableCell>
+                    <TableCell className={`text-left font-medium ${d.isCash ? 'text-green-600' : 'text-blue-600'}`}>
+                      {formatCurrency(d.amount)}
+                      {!d.isCash && <span className="text-[10px] block font-normal opacity-70">(ذمم/آجل)</span>}
+                    </TableCell>
                   </TableRow>
                 ))}
 
@@ -591,7 +596,7 @@ export function MonthlyReport() {
                 </div>
                 {(data.totals.totalDebtReceived || 0) > 0 && (
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">تمويل / ديون جديدة</span>
+                    <span className="text-muted-foreground">تمويل نقدي (كاش)</span>
                     <span className="font-medium">{formatCurrency(data.totals.totalDebtReceived || 0)}</span>
                   </div>
                 )}
