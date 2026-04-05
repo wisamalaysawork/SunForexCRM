@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
 
     // Debt and Partner Income
     const totalDebtReceived = newDebts
-      .filter(d => d.isCash) // Only cash funding adds to cash inflow
+      .filter((d: any) => d.isCash) // include only cash-based debts in inflow
       .reduce((sum, d) => sum + d.amount, 0)
     const totalDebtRepayments = debtPayments.reduce((sum, p) => sum + p.amount, 0)
     const totalPartnerIncome = partnerIncomes.reduce((sum, i) => sum + i.amount, 0)
@@ -131,11 +131,9 @@ export async function GET(request: NextRequest) {
       .filter(s => s.paymentStatus !== 'cancelled')
       .reduce((sum, s) => sum + (s.accountType?.costPrice || 0), 0)
 
-    const totalExpenses = manualExpenses + fundedCosts
-
-    // Total income = payments + course enrollments + funded sales + partner income
-    // (Debts received are liabilities, not income)
-    const totalIncome = totalPayments + totalEnrollmentIncome + totalFundedIncome + totalPartnerIncome
+    // Final Totals - Matching exactly what is shown in the lists
+    const totalIncome = totalPayments + totalEnrollmentIncome + totalFundedIncome + totalDebtReceived + totalPartnerIncome
+    const totalExpenses = manualExpenses + fundedCosts + totalDebtRepayments
 
     const categoryLabels: Record<string, string> = {
       rent: 'إيجارات',
@@ -192,37 +190,35 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Net profit
+    // Net result
     const netProfit = totalIncome - totalExpenses
 
     return NextResponse.json({
       month,
       year,
       monthNum,
+      totals: {
+        enrollmentIncome: totalEnrollmentIncome,
+        fundedIncome: totalFundedIncome,
+        manualExpenses,
+        fundedCosts,
+        totalIncome,
+        totalExpenses,
+        netProfit,
+        totalDebtReceived,
+        totalDebtRepayments,
+        totalPartnerIncome,
+        newStudentsCount: newStudents.length,
+      },
       enrollments,
       fundedSales,
       payments,
       expenses,
+      expensesByCategory,
       newStudents,
       newDebts,
       debtPayments,
       partnerIncomes,
-      totals: {
-        enrollmentIncome: totalEnrollmentIncome,
-        fundedIncome: totalFundedIncome,
-        fundedProfit: totalFundedProfit,
-        fundedCosts,
-        totalPayments,
-        totalDebtReceived,
-        totalDebtRepayments,
-        totalPartnerIncome,
-        manualExpenses,
-        totalExpenses,
-        totalIncome,
-        netProfit,
-        newStudentsCount: newStudents.length,
-      },
-      expensesByCategory,
     })
   } catch (error) {
     console.error('Reports error:', error)
