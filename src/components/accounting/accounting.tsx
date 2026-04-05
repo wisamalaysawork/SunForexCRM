@@ -84,9 +84,6 @@ export default function AccountingComponent() {
   const partnerIncomeTotal = partnerIncomes.reduce((sum: number, i: any) => sum + i.amount, 0)
   const debtsReceivedTotal = monthDebts.reduce((sum: number, d: any) => sum + d.amount, 0)
 
-  // Use only true revenue for P&L Income
-  const totalIncome = manualPaymentsTotal + enrollmentIncome + fundedIncome + partnerIncomeTotal
-
   // Expenses calculations
   const manualExpenses = expenses.reduce((sum: number, e: any) => sum + e.amount, 0)
   const fundedCosts = monthFundedSales
@@ -95,8 +92,9 @@ export default function AccountingComponent() {
   
   const debtRepaymentsTotal = debtPayments.reduce((sum: number, p: any) => sum + p.amount, 0)
 
-  // Use only true operational expenses for P&L Expenses
-  const totalExpenses = manualExpenses + fundedCosts
+  // Use cash-flow logic for Treasury metrics (Audit/Box focus)
+  const totalIncome = manualPaymentsTotal + enrollmentIncome + fundedIncome + partnerIncomeTotal + debtsReceivedTotal
+  const totalExpenses = manualExpenses + fundedCosts + debtRepaymentsTotal
   const netProfit = totalIncome - totalExpenses
 
   // Transaction history compilation
@@ -208,11 +206,13 @@ export default function AccountingComponent() {
     return matchesSearch && matchesCategory
   }).sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
-  // Summary of filtered results
   const filteredCount = activeTab === 'overview' ? filteredTransactions.length : filteredExpenses.length
+  
+  // Logic Fix: For expenses tab, the sum is always an 'expense' (outgoing)
+  // For overview, it depends on the filterType
   const filteredSum = activeTab === 'overview' 
     ? filteredTransactions.reduce((sum, t) => sum + (t.type === 'income' ? t.amount : -t.amount), 0)
-    : filteredExpenses.reduce((sum: number, e: any) => sum + e.amount, 0)
+    : -filteredExpenses.reduce((sum: number, e: any) => sum + e.amount, 0)
 
   // Categories Aggregation
   const categoryTotals: Record<string, { label: string, color: string, amount: number }> = {}
@@ -511,11 +511,12 @@ export default function AccountingComponent() {
               <Badge variant="secondary" className="text-sm font-semibold">{filteredCount}</Badge>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">إجمالي المبلغ:</span>
+              <span className="text-muted-foreground">إجمالي المبلغ في الفلتر:</span>
               <span className={`text-base font-bold ${filteredSum >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                 ${Math.abs(filteredSum).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                {filteredSum < 0 && <span className="text-xs mr-1 opacity-70">(صادر)</span>}
-                {filteredSum > 0 && <span className="text-xs mr-1 opacity-70">(وارد)</span>}
+                <span className="text-xs mr-1 opacity-70">
+                  {filteredSum < 0 ? '(صادر)' : '(وارد)'}
+                </span>
               </span>
             </div>
           </div>
