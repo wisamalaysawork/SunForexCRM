@@ -93,7 +93,9 @@ export default function AccountingComponent() {
   const debtRepaymentsTotal = debtPayments.reduce((sum: number, p: any) => sum + p.amount, 0)
 
   // Use cash-flow logic for Treasury metrics (Audit/Box focus)
-  const totalIncome = manualPaymentsTotal + enrollmentIncome + fundedIncome + partnerIncomeTotal + debtsReceivedTotal
+  // DEBT EXCLUSION: We exclude debtsReceivedTotal from income as requested, 
+  // but keep debtRepaymentsTotal in expenses to reflect outgoing cash flow.
+  const totalIncome = manualPaymentsTotal + enrollmentIncome + fundedIncome + partnerIncomeTotal
   const totalExpenses = manualExpenses + fundedCosts + debtRepaymentsTotal
   const netProfit = totalIncome - totalExpenses
 

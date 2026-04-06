@@ -131,8 +131,8 @@ export async function GET(request: NextRequest) {
       .filter(s => s.paymentStatus !== 'cancelled')
       .reduce((sum, s) => sum + (s.accountType?.costPrice || 0), 0)
 
-    // Final Totals - Matching exactly what is shown in the lists
-    const totalIncome = totalPayments + totalEnrollmentIncome + totalFundedIncome + totalDebtReceived + totalPartnerIncome
+    // Final Totals - Debt is excluded from Income but kept in Expenses for cash-flow tracking
+    const totalIncome = totalPayments + totalEnrollmentIncome + totalFundedIncome + totalPartnerIncome
     const totalExpenses = manualExpenses + fundedCosts + totalDebtRepayments
 
     const categoryLabels: Record<string, string> = {
