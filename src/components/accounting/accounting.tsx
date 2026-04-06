@@ -316,7 +316,7 @@ export default function AccountingComponent() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Income */}
         <Card className="bg-gradient-to-br from-emerald-50 to-teal-50/30 border-emerald-100">
           <CardContent className="p-6">
@@ -364,23 +364,6 @@ export default function AccountingComponent() {
           </CardContent>
         </Card>
 
-        {/* Treasury (All Time) */}
-        <Card className="bg-gradient-to-br from-violet-50 to-purple-50/30 border-violet-100 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-          <CardContent className="p-6 relative z-10">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm font-medium text-violet-600 mb-1">الصندوق (All-Time)</p>
-                <h3 className="text-3xl font-bold text-violet-900">
-                  ${(treasuryData?.balance || 0).toLocaleString()}
-                </h3>
-              </div>
-              <div className="p-3 bg-violet-100 rounded-xl text-violet-600">
-                <Landmark className="h-6 w-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
