@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,11 +15,12 @@ import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAccountingData, useExpenseMutations } from '@/hooks/accounting/use-accounting'
 import { useTreasuryData } from '@/hooks/accounting/use-treasury'
+import { useExchangeRate } from '@/hooks/use-exchange-rate'
 import {
   Plus, Edit, Trash2, TrendingUp, TrendingDown, DollarSign,
   ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight,
   Receipt, Building2, Lightbulb, Users, Megaphone, Monitor,
-  Wallet, GraduationCap, Landmark, Search, X
+  Wallet, GraduationCap, Landmark, Search, X, RefreshCw
 } from 'lucide-react'
 
 // ── Constants ──
@@ -51,15 +52,30 @@ export default function AccountingComponent() {
     amount: '',
     description: '',
     isPaid: true,
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toISOString().split('T')[0],
+    currency: 'USD' as 'USD' | 'ILS',
   })
+
+  // Live preview: USD equivalent when ILS mode is active
+  const [usdPreview, setUsdPreview] = useState<number | null>(null)
 
   // ── Queries and Mutations ──
   const { data, isLoading: accountingLoading } = useAccountingData(currentMonth)
   const { createExpense, updateExpense, deleteExpense } = useExpenseMutations(currentMonth)
   const { data: treasuryData, isLoading: treasuryLoading } = useTreasuryData()
+  const { rate: exchangeRate, isLoading: rateLoading, error: rateError, lastUpdated: rateUpdatedAt, convertILStoUSD, refetch: refetchRate } = useExchangeRate()
 
   const isLoading = accountingLoading || treasuryLoading
+
+  // Recompute USD preview on ILS amount or rate change
+  useEffect(() => {
+    if (form.currency === 'ILS' && form.amount && exchangeRate) {
+      const converted = convertILStoUSD(Number(form.amount))
+      setUsdPreview(converted)
+    } else {
+      setUsdPreview(null)
+    }
+  }, [form.amount, form.currency, exchangeRate, convertILStoUSD])
 
   // ── Derived Data ──
   const expenses = data?.expenses || []
@@ -240,7 +256,8 @@ export default function AccountingComponent() {
   // ── Handlers ──
   const openNewExpenseDialog = () => {
     setEditExpense(null)
-    setForm({ category: '', amount: '', description: '', isPaid: true, date: new Date().toISOString().split('T')[0] })
+    setForm({ category: '', amount: '', description: '', isPaid: true, date: new Date().toISOString().split('T')[0], currency: 'USD' })
+    setUsdPreview(null)
     setDialogOpen(true)
   }
 
@@ -250,18 +267,30 @@ export default function AccountingComponent() {
       category: expense.category,
       amount: expense.amount.toString(),
       description: expense.description || '',
-      isPaid: expense.isPaid !== false, // Default to true if undefined
-      date: new Date(expense.date).toISOString().split('T')[0]
+      isPaid: expense.isPaid !== false,
+      date: new Date(expense.date).toISOString().split('T')[0],
+      currency: 'USD', // stored values are always USD
     })
+    setUsdPreview(null)
     setDialogOpen(true)
   }
 
   const handleSave = () => {
     if (!form.category || !form.amount) return
 
+    // If currency is ILS, convert to USD before persisting
+    let finalAmount = Number(form.amount)
+    if (form.currency === 'ILS') {
+      const converted = convertILStoUSD(finalAmount)
+      if (!converted) return // rate not ready yet
+      finalAmount = converted
+    }
+
     const data = {
-      ...form,
-      amount: Number(form.amount),
+      category: form.category,
+      amount: finalAmount,
+      description: form.description,
+      isPaid: form.isPaid,
       date: new Date(form.date).toISOString()
     }
 
@@ -402,9 +431,108 @@ export default function AccountingComponent() {
                   </Select>
                 </div>
 
+                {/* ── Currency Toggle + Amount Input ── */}
                 <div className="space-y-2">
-                  <Label>المبلغ ($)</Label>
-                  <Input type="number" min="0" step="0.01" placeholder="0.00" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
+                  <div className="flex items-center justify-between">
+                    <Label>المبلغ</Label>
+                    <div className="flex rounded-lg border overflow-hidden text-sm font-medium">
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, currency: 'USD', amount: '' })}
+                        className={`px-3 py-1.5 transition-colors ${
+                          form.currency === 'USD'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-muted-foreground hover:bg-slate-50'
+                        }`}
+                      >
+                        🇺🇸 USD $
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, currency: 'ILS', amount: '' })}
+                        className={`px-3 py-1.5 transition-colors ${
+                          form.currency === 'ILS'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-muted-foreground hover:bg-slate-50'
+                        }`}
+                      >
+                        🇮🇱 شيكل ₪
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold select-none">
+                      {form.currency === 'ILS' ? '₪' : '$'}
+                    </span>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      className="pr-8"
+                      value={form.amount}
+                      onChange={e => setForm({ ...form, amount: e.target.value })}
+                    />
+                  </div>
+
+                  {/* ILS conversion preview */}
+                  {form.currency === 'ILS' && (
+                    <div className={`rounded-lg border px-4 py-3 text-sm space-y-1.5 ${
+                      rateError ? 'border-orange-200 bg-orange-50' : 'border-blue-100 bg-blue-50'
+                    }`}>
+                      {/* Exchange rate line */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground flex items-center gap-1.5">
+                          💱 سعر الصرف الحالي
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {rateLoading ? (
+                            <span className="text-muted-foreground">جاري التحديث...</span>
+                          ) : exchangeRate ? (
+                            <span className="font-semibold text-blue-700">
+                              1$ = {exchangeRate.toFixed(2)} ₪
+                            </span>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={refetchRate}
+                            disabled={rateLoading}
+                            className="text-blue-500 hover:text-blue-700 disabled:opacity-40"
+                            title="تحديث السعر"
+                          >
+                            <RefreshCw className={`h-3.5 w-3.5 ${rateLoading ? 'animate-spin' : ''}`} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Warning if rate error */}
+                      {rateError && (
+                        <p className="text-orange-600 text-xs">{rateError}</p>
+                      )}
+
+                      {/* Live USD preview */}
+                      {form.amount && Number(form.amount) > 0 && (
+                        <div className="flex items-center justify-between pt-1 border-t border-blue-100">
+                          <span className="text-muted-foreground">يعادل بالدولار</span>
+                          {usdPreview !== null ? (
+                            <span className="font-bold text-emerald-700 text-base">
+                              ${usdPreview.toFixed(2)}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">جاري الحساب...</span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Last updated */}
+                      {rateUpdatedAt && !rateLoading && (
+                        <p className="text-xs text-muted-foreground/70">
+                          آخر تحديث: {rateUpdatedAt.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -417,8 +545,20 @@ export default function AccountingComponent() {
                   <Switch checked={form.isPaid} onCheckedChange={checked => setForm({ ...form, isPaid: checked })} />
                 </div>
                 
-                <Button className="w-full" onClick={handleSave} disabled={createExpense.isPending || updateExpense.isPending}>
-                  {createExpense.isPending || updateExpense.isPending ? 'جاري الحفظ...' : 'حفظ'}
+                <Button
+                  className="w-full"
+                  onClick={handleSave}
+                  disabled={
+                    createExpense.isPending ||
+                    updateExpense.isPending ||
+                    (form.currency === 'ILS' && (rateLoading || !exchangeRate))
+                  }
+                >
+                  {createExpense.isPending || updateExpense.isPending
+                    ? 'جاري الحفظ...'
+                    : form.currency === 'ILS' && rateLoading
+                    ? 'جاري جلب سعر الصرف...'
+                    : 'حفظ'}
                 </Button>
               </div>
             </DialogContent>
